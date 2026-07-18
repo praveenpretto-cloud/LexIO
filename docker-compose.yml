@@ -1,0 +1,22 @@
+
+services:
+  backend:
+    build:
+      context: .
+      dockerfile: backend.Dockerfile
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./data:/app/data
+    environment:
+      - SYNC_DB_URL=sqlite:///./data/compliance_log.db
+      - ASYNC_DB_URL=sqlite+aiosqlite:///./data/compliance_log.db
+
+  frontend:
+    build:
+      context: .
+      dockerfile: frontend.Dockerfile
+    ports:
+      - "80:80"
+    depends_on:
+      - backend

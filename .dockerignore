@@ -1,0 +1,32 @@
+# Environments
+.env
+.env.*
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+.venv/
+venv/
+*.egg-info/
+
+# Database
+*.db
+*.sqlite3
+data/
+
+# Node
+node_modules/
+dist/
+npm-debug.log*
+yarn-debug.log*
+
+# OS / Editor
+.DS_Store
+.vscode/
+.idea/
+
+# Docker specific
+backend.Dockerfile
+frontend.Dockerfile
+docker-compose.yml

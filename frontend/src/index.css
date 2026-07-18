@@ -1,0 +1,148 @@
+@import "tailwindcss";
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600;700&display=swap');
+
+@theme {
+  --font-sans: 'Inter', sans-serif;
+  --font-mono: 'JetBrains Mono', monospace;
+
+  --color-surface-950: #05080f;
+  --color-surface-900: #090d18;
+  --color-surface-800: #0d1220;
+  --color-surface-700: #111827;
+  --color-surface-600: #1a2235;
+
+  --color-brand-400: #818cf8;
+  --color-brand-500: #6366f1;
+  --color-brand-600: #4f46e5;
+
+  --color-approve-400: #34d399;
+  --color-approve-500: #10b981;
+  --color-approve-600: #059669;
+
+  --color-reject-400:  #fb7185;
+  --color-reject-500:  #f43f5e;
+  --color-reject-600:  #e11d48;
+}
+
+/* ── Base ─────────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  font-family: var(--font-sans);
+  background-color: var(--color-surface-950);
+  color: #f1f5f9;
+  -webkit-font-smoothing: antialiased;
+  min-height: 100vh;
+}
+
+#root { min-height: 100vh; }
+
+/* ── Grid background ──────────────────────────────────── */
+.bg-grid {
+  position: fixed;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(99,102,241,0.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(99,102,241,0.04) 1px, transparent 1px);
+  background-size: 44px 44px;
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* ── Scanlines ────────────────────────────────────────── */
+.bg-scanlines {
+  position: fixed;
+  inset: 0;
+  background: repeating-linear-gradient(
+    0deg, transparent, transparent 2px,
+    rgba(0,0,0,0.025) 2px, rgba(0,0,0,0.025) 4px
+  );
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* ── Custom checkbox ──────────────────────────────────── */
+.custom-check {
+  appearance: none;
+  width: 20px;
+  height: 20px;
+  border: 2px solid rgba(99,102,241,0.4);
+  border-radius: 5px;
+  background: rgba(99,102,241,0.06);
+  cursor: pointer;
+  position: relative;
+  flex-shrink: 0;
+  transition: all 0.15s ease;
+}
+.custom-check:checked {
+  background: #6366f1;
+  border-color: #6366f1;
+  box-shadow: 0 0 12px rgba(99,102,241,0.5);
+}
+.custom-check:checked::after {
+  content: '✓';
+  position: absolute;
+  color: white;
+  font-size: 12px;
+  font-weight: 700;
+  top: 50%; left: 50%;
+  transform: translate(-50%,-50%);
+}
+.custom-check:hover { border-color: #6366f1; }
+
+/* ── Select chevron ───────────────────────────────────── */
+.styled-select {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3E%3Cpath stroke='%236366f1' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 14px center;
+  background-size: 20px;
+}
+
+/* ── Flash animations ─────────────────────────────────── */
+@keyframes flashRed {
+  0%   { background-color: rgba(244,63,94,0.22); box-shadow: 0 0 90px rgba(244,63,94,0.55), inset 0 0 40px rgba(244,63,94,0.08); }
+  100% { background-color: transparent; box-shadow: none; }
+}
+@keyframes flashGreen {
+  0%   { background-color: rgba(16,185,129,0.22); box-shadow: 0 0 90px rgba(16,185,129,0.55), inset 0 0 40px rgba(16,185,129,0.08); }
+  100% { background-color: transparent; box-shadow: none; }
+}
+@keyframes glowRed {
+  0%,100% { box-shadow: 0 0 20px rgba(244,63,94,0.3),  0 0 60px rgba(244,63,94,0.1); }
+  50%     { box-shadow: 0 0 50px rgba(244,63,94,0.65), 0 0 100px rgba(244,63,94,0.2); }
+}
+@keyframes glowGreen {
+  0%,100% { box-shadow: 0 0 20px rgba(16,185,129,0.3),  0 0 60px rgba(16,185,129,0.1); }
+  50%     { box-shadow: 0 0 50px rgba(16,185,129,0.65), 0 0 100px rgba(16,185,129,0.2); }
+}
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(16px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes shimmer {
+  from { transform: translateX(-100%); }
+  to   { transform: translateX(100%); }
+}
+
+.flash-red   { animation: flashRed   0.7s ease-out forwards; }
+.flash-green { animation: flashGreen 0.7s ease-out forwards; }
+.glow-red    { animation: glowRed    2s ease-in-out infinite; }
+.glow-green  { animation: glowGreen  2s ease-in-out infinite; }
+.slide-up    { animation: slideUp    0.35s cubic-bezier(0.4,0,0.2,1) forwards; }
+
+.btn-shimmer::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.12), transparent);
+  transform: translateX(-100%);
+  transition: transform 0.6s ease;
+}
+.btn-shimmer:hover::after { transform: translateX(100%); }
+
+/* ── Scrollbar ────────────────────────────────────────── */
+::-webkit-scrollbar { width: 5px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: rgba(99,102,241,0.3); border-radius: 3px; }

@@ -1,0 +1,1014 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>LexIO — Crypto Compliance Engine</title>
+  <meta name="description" content="Cross-border crypto compliance dashboard enforcing MAS PSN02 and EU MiCA/TFR regulations in real time." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <style>
+    /* ── Reset & Base ─────────────────────────────────────────── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg-root:      #080c14;
+      --bg-panel:     #0d1320;
+      --bg-card:      #111827;
+      --bg-card-hov:  #161f30;
+      --border:       rgba(255,255,255,0.07);
+      --border-glow:  rgba(99,102,241,0.4);
+
+      --accent-blue:  #6366f1;
+      --accent-cyan:  #22d3ee;
+      --accent-purple:#a78bfa;
+      --approve:      #10b981;
+      --approve-bg:   rgba(16,185,129,0.10);
+      --reject:       #f43f5e;
+      --reject-bg:    rgba(244,63,94,0.10);
+
+      --text-1: #f1f5f9;
+      --text-2: #94a3b8;
+      --text-3: #4b5563;
+
+      --radius-sm: 8px;
+      --radius-md: 14px;
+      --radius-lg: 20px;
+
+      --shadow-glow: 0 0 40px rgba(99,102,241,0.15);
+      --transition: 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    html, body {
+      height: 100%;
+      font-family: 'Inter', sans-serif;
+      background: var(--bg-root);
+      color: var(--text-1);
+      overflow-x: hidden;
+    }
+
+    /* ── Background grid ──────────────────────────────────────── */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image:
+        linear-gradient(rgba(99,102,241,0.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(99,102,241,0.03) 1px, transparent 1px);
+      background-size: 40px 40px;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    /* ── Layout ───────────────────────────────────────────────── */
+    .layout {
+      display: grid;
+      grid-template-columns: 240px 1fr;
+      grid-template-rows: auto 1fr;
+      min-height: 100vh;
+      position: relative;
+      z-index: 1;
+    }
+
+    /* ── Sidebar ──────────────────────────────────────────────── */
+    .sidebar {
+      grid-row: 1 / -1;
+      background: var(--bg-panel);
+      border-right: 1px solid var(--border);
+      padding: 28px 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      position: sticky;
+      top: 0;
+      height: 100vh;
+    }
+
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 0 12px 24px;
+      border-bottom: 1px solid var(--border);
+      margin-bottom: 8px;
+    }
+
+    .logo-icon {
+      width: 36px;
+      height: 36px;
+      background: linear-gradient(135deg, var(--accent-blue), var(--accent-purple));
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+      box-shadow: 0 0 20px rgba(99,102,241,0.4);
+    }
+
+    .logo-text { font-size: 18px; font-weight: 800; letter-spacing: -0.3px; }
+    .logo-text span { color: var(--accent-blue); }
+
+    .nav-label {
+      font-size: 10px;
+      font-weight: 600;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      color: var(--text-3);
+      padding: 0 12px;
+      margin: 8px 0 4px;
+    }
+
+    .nav-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 12px;
+      border-radius: var(--radius-sm);
+      cursor: pointer;
+      color: var(--text-2);
+      font-size: 14px;
+      font-weight: 500;
+      transition: var(--transition);
+      border: 1px solid transparent;
+    }
+
+    .nav-item:hover { background: rgba(99,102,241,0.08); color: var(--text-1); }
+    .nav-item.active {
+      background: rgba(99,102,241,0.12);
+      color: var(--accent-blue);
+      border-color: rgba(99,102,241,0.2);
+    }
+
+    .nav-item .icon { font-size: 16px; width: 20px; text-align: center; }
+
+    .sidebar-footer {
+      margin-top: auto;
+      padding-top: 16px;
+      border-top: 1px solid var(--border);
+    }
+
+    .reg-badges {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      padding: 0 4px;
+    }
+
+    .reg-badge {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 10px;
+      border-radius: var(--radius-sm);
+      background: rgba(255,255,255,0.03);
+      border: 1px solid var(--border);
+      font-size: 11px;
+    }
+
+    .reg-dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
+
+    /* ── Topbar ───────────────────────────────────────────────── */
+    .topbar {
+      grid-column: 2;
+      background: var(--bg-panel);
+      border-bottom: 1px solid var(--border);
+      padding: 16px 32px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .topbar-title { font-size: 15px; font-weight: 600; }
+    .topbar-title span { color: var(--text-2); font-weight: 400; }
+
+    .topbar-right { display: flex; align-items: center; gap: 12px; }
+
+    .status-pill {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 5px 12px;
+      border-radius: 100px;
+      background: rgba(16,185,129,0.1);
+      border: 1px solid rgba(16,185,129,0.2);
+      font-size: 12px;
+      font-weight: 500;
+      color: var(--approve);
+    }
+
+    .status-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--approve);
+      animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.4; }
+    }
+
+    /* ── Main content ─────────────────────────────────────────── */
+    .main {
+      grid-column: 2;
+      padding: 32px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 28px;
+    }
+
+    /* ── Stats row ────────────────────────────────────────────── */
+    .stats-row {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 16px;
+    }
+
+    .stat-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      padding: 20px;
+      position: relative;
+      overflow: hidden;
+      transition: var(--transition);
+    }
+
+    .stat-card::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 2px;
+    }
+
+    .stat-card.blue::before  { background: linear-gradient(90deg, var(--accent-blue), var(--accent-cyan)); }
+    .stat-card.green::before { background: linear-gradient(90deg, var(--approve), #34d399); }
+    .stat-card.red::before   { background: linear-gradient(90deg, var(--reject), #fb7185); }
+    .stat-card.purple::before{ background: linear-gradient(90deg, var(--accent-purple), var(--accent-blue)); }
+
+    .stat-card:hover { transform: translateY(-2px); border-color: rgba(99,102,241,0.2); }
+
+    .stat-label { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.8px; color: var(--text-3); margin-bottom: 10px; }
+    .stat-value { font-size: 28px; font-weight: 800; letter-spacing: -1px; }
+    .stat-sub   { font-size: 12px; color: var(--text-2); margin-top: 4px; }
+
+    /* ── Two-column grid ──────────────────────────────────────── */
+    .content-grid {
+      display: grid;
+      grid-template-columns: 420px 1fr;
+      gap: 24px;
+      align-items: start;
+    }
+
+    /* ── Form card ────────────────────────────────────────────── */
+    .card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 28px;
+      transition: var(--transition);
+    }
+
+    .card-title {
+      font-size: 15px;
+      font-weight: 700;
+      margin-bottom: 6px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .card-subtitle { font-size: 13px; color: var(--text-2); margin-bottom: 24px; line-height: 1.5; }
+
+    .form-group { margin-bottom: 18px; }
+
+    .form-label {
+      display: block;
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--text-2);
+      text-transform: uppercase;
+      letter-spacing: 0.6px;
+      margin-bottom: 8px;
+    }
+
+    .form-input {
+      width: 100%;
+      background: rgba(255,255,255,0.04);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 11px 14px;
+      color: var(--text-1);
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 14px;
+      outline: none;
+      transition: var(--transition);
+      appearance: none;
+    }
+
+    .form-input:focus {
+      border-color: var(--accent-blue);
+      box-shadow: 0 0 0 3px rgba(99,102,241,0.15);
+      background: rgba(99,102,241,0.05);
+    }
+
+    .form-input option { background: var(--bg-card); }
+
+    /* ── Toggle ───────────────────────────────────────────────── */
+    .toggle-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 14px 16px;
+      background: rgba(255,255,255,0.03);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      margin-bottom: 12px;
+      cursor: pointer;
+      transition: var(--transition);
+    }
+
+    .toggle-row:hover { border-color: rgba(99,102,241,0.25); background: rgba(99,102,241,0.05); }
+
+    .toggle-info { display: flex; flex-direction: column; gap: 2px; }
+    .toggle-name { font-size: 13px; font-weight: 600; }
+    .toggle-desc { font-size: 11px; color: var(--text-2); }
+
+    .toggle-switch {
+      width: 40px;
+      height: 22px;
+      background: var(--text-3);
+      border-radius: 100px;
+      position: relative;
+      transition: var(--transition);
+      flex-shrink: 0;
+    }
+
+    .toggle-switch.on { background: var(--accent-blue); box-shadow: 0 0 12px rgba(99,102,241,0.5); }
+
+    .toggle-switch::after {
+      content: '';
+      position: absolute;
+      width: 16px;
+      height: 16px;
+      background: #fff;
+      border-radius: 50%;
+      top: 3px;
+      left: 3px;
+      transition: var(--transition);
+    }
+
+    .toggle-switch.on::after { transform: translateX(18px); }
+
+    /* ── Submit button ────────────────────────────────────────── */
+    .btn-submit {
+      width: 100%;
+      padding: 13px;
+      background: linear-gradient(135deg, var(--accent-blue), var(--accent-purple));
+      border: none;
+      border-radius: var(--radius-sm);
+      color: #fff;
+      font-size: 14px;
+      font-weight: 700;
+      letter-spacing: 0.3px;
+      cursor: pointer;
+      transition: var(--transition);
+      position: relative;
+      overflow: hidden;
+      margin-top: 8px;
+    }
+
+    .btn-submit::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(135deg, rgba(255,255,255,0.1), transparent);
+      opacity: 0;
+      transition: var(--transition);
+    }
+
+    .btn-submit:hover { transform: translateY(-1px); box-shadow: 0 8px 25px rgba(99,102,241,0.4); }
+    .btn-submit:hover::before { opacity: 1; }
+    .btn-submit:active { transform: translateY(0); }
+    .btn-submit:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
+
+    .btn-loading { display: flex; align-items: center; justify-content: center; gap: 8px; }
+
+    .spinner {
+      width: 16px;
+      height: 16px;
+      border: 2px solid rgba(255,255,255,0.3);
+      border-top-color: #fff;
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+    }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ── Result card ──────────────────────────────────────────── */
+    .result-card {
+      border-radius: var(--radius-lg);
+      padding: 28px;
+      border: 1px solid var(--border);
+      background: var(--bg-card);
+      display: none;
+      animation: fadeUp 0.4s cubic-bezier(0.4,0,0.2,1);
+    }
+
+    .result-card.visible { display: block; }
+
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(12px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .result-card.approve {
+      border-color: rgba(16,185,129,0.3);
+      background: linear-gradient(135deg, rgba(16,185,129,0.06), var(--bg-card));
+    }
+
+    .result-card.reject {
+      border-color: rgba(244,63,94,0.3);
+      background: linear-gradient(135deg, rgba(244,63,94,0.06), var(--bg-card));
+    }
+
+    .result-header {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      margin-bottom: 20px;
+    }
+
+    .result-icon {
+      width: 56px;
+      height: 56px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 24px;
+      flex-shrink: 0;
+    }
+
+    .result-icon.approve { background: var(--approve-bg); border: 2px solid rgba(16,185,129,0.3); }
+    .result-icon.reject  { background: var(--reject-bg);  border: 2px solid rgba(244,63,94,0.3); }
+
+    .result-status {
+      font-size: 26px;
+      font-weight: 800;
+      letter-spacing: -0.5px;
+    }
+
+    .result-status.approve { color: var(--approve); }
+    .result-status.reject  { color: var(--reject); }
+
+    .result-rule {
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      color: var(--text-2);
+    }
+
+    .result-reason {
+      padding: 14px 16px;
+      border-radius: var(--radius-sm);
+      font-size: 13px;
+      line-height: 1.6;
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    .result-reason.approve { background: var(--approve-bg); color: #6ee7b7; border: 1px solid rgba(16,185,129,0.15); }
+    .result-reason.reject  { background: var(--reject-bg);  color: #fda4af; border: 1px solid rgba(244,63,94,0.15);  }
+
+    .result-meta {
+      display: flex;
+      gap: 16px;
+      margin-top: 16px;
+    }
+
+    .result-meta-item {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    .result-meta-label { font-size: 10px; text-transform: uppercase; letter-spacing: 0.6px; color: var(--text-3); }
+    .result-meta-value { font-size: 13px; font-weight: 600; font-family: 'JetBrains Mono', monospace; }
+
+    /* ── Empty state ──────────────────────────────────────────── */
+    .empty-state {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      padding: 60px 32px;
+      color: var(--text-3);
+      text-align: center;
+      border: 1px dashed var(--border);
+      border-radius: var(--radius-lg);
+    }
+
+    .empty-icon { font-size: 40px; opacity: 0.4; }
+    .empty-text { font-size: 14px; }
+
+    /* ── History table ────────────────────────────────────────── */
+    .section-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 16px;
+    }
+
+    .section-title { font-size: 15px; font-weight: 700; display: flex; align-items: center; gap: 8px; }
+    .count-badge {
+      font-size: 11px;
+      font-weight: 600;
+      padding: 2px 8px;
+      border-radius: 100px;
+      background: rgba(99,102,241,0.12);
+      color: var(--accent-blue);
+      border: 1px solid rgba(99,102,241,0.2);
+    }
+
+    .btn-refresh {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 7px 14px;
+      background: rgba(255,255,255,0.04);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      color: var(--text-2);
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: var(--transition);
+    }
+
+    .btn-refresh:hover { border-color: var(--accent-blue); color: var(--accent-blue); background: rgba(99,102,241,0.06); }
+
+    .table-wrap {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      overflow: hidden;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    thead tr {
+      background: rgba(255,255,255,0.02);
+      border-bottom: 1px solid var(--border);
+    }
+
+    th {
+      padding: 12px 20px;
+      text-align: left;
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.6px;
+      color: var(--text-3);
+    }
+
+    tbody tr {
+      border-bottom: 1px solid rgba(255,255,255,0.04);
+      transition: var(--transition);
+    }
+
+    tbody tr:last-child { border-bottom: none; }
+    tbody tr:hover { background: rgba(255,255,255,0.02); }
+
+    td {
+      padding: 14px 20px;
+      font-size: 13px;
+      vertical-align: middle;
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      padding: 4px 10px;
+      border-radius: 100px;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.4px;
+    }
+
+    .badge.approve { background: var(--approve-bg); color: var(--approve); border: 1px solid rgba(16,185,129,0.2); }
+    .badge.reject  { background: var(--reject-bg);  color: var(--reject);  border: 1px solid rgba(244,63,94,0.2); }
+
+    .badge::before {
+      content: '';
+      width: 5px;
+      height: 5px;
+      border-radius: 50%;
+      background: currentColor;
+    }
+
+    .mono { font-family: 'JetBrains Mono', monospace; font-size: 12px; }
+
+    .wallet-pill {
+      display: inline-block;
+      padding: 3px 8px;
+      border-radius: 5px;
+      font-size: 11px;
+      font-weight: 600;
+    }
+
+    .wallet-pill.hosted   { background: rgba(34,211,238,0.08); color: var(--accent-cyan); border: 1px solid rgba(34,211,238,0.15); }
+    .wallet-pill.unhosted { background: rgba(167,139,250,0.08); color: var(--accent-purple); border: 1px solid rgba(167,139,250,0.15); }
+
+    .reason-cell {
+      max-width: 280px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      color: var(--text-2);
+      font-size: 12px;
+    }
+
+    .time-cell { color: var(--text-3); font-size: 11px; font-family: 'JetBrains Mono', monospace; }
+
+    .table-loading, .table-empty {
+      padding: 48px;
+      text-align: center;
+      color: var(--text-3);
+      font-size: 14px;
+    }
+
+    /* ── Scrollbar ────────────────────────────────────────────── */
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 3px; }
+    ::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.2); }
+
+    /* ── Responsive ───────────────────────────────────────────── */
+    @media (max-width: 1100px) {
+      .layout { grid-template-columns: 1fr; }
+      .sidebar { display: none; }
+      .topbar, .main { grid-column: 1; }
+      .content-grid { grid-template-columns: 1fr; }
+      .stats-row { grid-template-columns: repeat(2, 1fr); }
+    }
+  </style>
+</head>
+<body>
+
+<div class="layout">
+
+  <!-- ── Sidebar ── -->
+  <aside class="sidebar">
+    <div class="logo">
+      <div class="logo-icon">⚖️</div>
+      <div class="logo-text">Lex<span>IO</span></div>
+    </div>
+
+    <span class="nav-label">Navigation</span>
+    <div class="nav-item active" id="nav-dashboard">
+      <span class="icon">◈</span> Dashboard
+    </div>
+    <div class="nav-item" onclick="scrollToHistory()">
+      <span class="icon">☰</span> Audit Log
+    </div>
+    <div class="nav-item" onclick="window.open('/docs','_blank')">
+      <span class="icon">⟐</span> API Docs
+    </div>
+
+    <div class="sidebar-footer">
+      <span class="nav-label" style="display:block;margin-bottom:10px;">Active Regulations</span>
+      <div class="reg-badges">
+        <div class="reg-badge">
+          <div class="reg-dot" style="background:var(--accent-cyan)"></div>
+          <div>
+            <div style="font-weight:600;color:var(--text-1)">MAS PSN02</div>
+            <div style="color:var(--text-3);font-size:10px">Singapore · SGD 1,500</div>
+          </div>
+        </div>
+        <div class="reg-badge">
+          <div class="reg-dot" style="background:var(--accent-purple)"></div>
+          <div>
+            <div style="font-weight:600;color:var(--text-1)">EU MiCA / TFR</div>
+            <div style="color:var(--text-3);font-size:10px">Europe · EUR 1,000</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- ── Topbar ── -->
+  <header class="topbar">
+    <div class="topbar-title">
+      Compliance Dashboard <span>/ Check & Audit</span>
+    </div>
+    <div class="topbar-right">
+      <div class="status-pill">
+        <div class="status-dot"></div>
+        Engine Operational
+      </div>
+    </div>
+  </header>
+
+  <!-- ── Main ── -->
+  <main class="main">
+
+    <!-- Stats -->
+    <div class="stats-row" id="stats-row">
+      <div class="stat-card blue">
+        <div class="stat-label">Total Checks</div>
+        <div class="stat-value" id="stat-total">—</div>
+        <div class="stat-sub">All time</div>
+      </div>
+      <div class="stat-card green">
+        <div class="stat-label">Approved</div>
+        <div class="stat-value" id="stat-approve" style="color:var(--approve)">—</div>
+        <div class="stat-sub">Cleared transactions</div>
+      </div>
+      <div class="stat-card red">
+        <div class="stat-label">Rejected</div>
+        <div class="stat-value" id="stat-reject" style="color:var(--reject)">—</div>
+        <div class="stat-sub">Flagged violations</div>
+      </div>
+      <div class="stat-card purple">
+        <div class="stat-label">Approval Rate</div>
+        <div class="stat-value" id="stat-rate" style="color:var(--accent-purple)">—</div>
+        <div class="stat-sub">Compliance score</div>
+      </div>
+    </div>
+
+    <!-- Form + Result -->
+    <div class="content-grid">
+
+      <!-- Form -->
+      <div class="card">
+        <div class="card-title">⚡ Run Compliance Check</div>
+        <div class="card-subtitle">Evaluate a transfer against MAS PSN02 and EU MiCA / TFR rules.</div>
+
+        <form id="check-form" onsubmit="runCheck(event)">
+
+          <div class="form-group">
+            <label class="form-label" for="amount">Transfer Amount</label>
+            <input id="amount" class="form-input" type="number" step="0.01" min="0.01"
+              placeholder="e.g. 1500.00" required />
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="wallet_type">Wallet Type</label>
+            <select id="wallet_type" class="form-input">
+              <option value="Hosted">Hosted (Custodial)</option>
+              <option value="Unhosted">Unhosted (Self-Custodial)</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <div class="toggle-row" id="kyc-row" onclick="toggleKyc()">
+              <div class="toggle-info">
+                <div class="toggle-name">Sender KYC Complete</div>
+                <div class="toggle-desc">Full originator identity verified</div>
+              </div>
+              <div class="toggle-switch" id="kyc-toggle"></div>
+            </div>
+
+            <div class="toggle-row" id="crypto-row" onclick="toggleCrypto()">
+              <div class="toggle-info">
+                <div class="toggle-name">Cryptographic Proof</div>
+                <div class="toggle-desc">Wallet ownership cryptographically verified</div>
+              </div>
+              <div class="toggle-switch" id="crypto-toggle"></div>
+            </div>
+          </div>
+
+          <button class="btn-submit" id="submit-btn" type="submit">
+            Run Compliance Check
+          </button>
+        </form>
+      </div>
+
+      <!-- Result -->
+      <div>
+        <div id="result-empty" class="empty-state">
+          <div class="empty-icon">⚖️</div>
+          <div class="empty-text">Submit a transaction to see the compliance decision</div>
+        </div>
+
+        <div class="result-card" id="result-card">
+          <div class="result-header">
+            <div class="result-icon" id="result-icon"></div>
+            <div>
+              <div class="result-status" id="result-status"></div>
+              <div class="result-rule" id="result-rule"></div>
+            </div>
+          </div>
+          <div class="result-reason" id="result-reason"></div>
+          <div class="result-meta" id="result-meta"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- History table -->
+    <div id="history-section">
+      <div class="section-header">
+        <div class="section-title">
+          📋 Audit Log
+          <span class="count-badge" id="history-count">0</span>
+        </div>
+        <button class="btn-refresh" onclick="loadHistory()">↻ Refresh</button>
+      </div>
+
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Status</th>
+              <th>Amount</th>
+              <th>Wallet</th>
+              <th>KYC</th>
+              <th>Crypto Proof</th>
+              <th>Reason</th>
+              <th>Timestamp</th>
+            </tr>
+          </thead>
+          <tbody id="history-body">
+            <tr><td colspan="8" class="table-loading">Loading audit log…</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<script>
+  // ── State ────────────────────────────────────────────────────
+  let kycOn    = false;
+  let cryptoOn = false;
+
+  // ── Toggles ──────────────────────────────────────────────────
+  function toggleKyc() {
+    kycOn = !kycOn;
+    document.getElementById('kyc-toggle').classList.toggle('on', kycOn);
+  }
+
+  function toggleCrypto() {
+    cryptoOn = !cryptoOn;
+    document.getElementById('crypto-toggle').classList.toggle('on', cryptoOn);
+  }
+
+  // ── Compliance check ─────────────────────────────────────────
+  async function runCheck(e) {
+    e.preventDefault();
+    const btn = document.getElementById('submit-btn');
+    btn.disabled = true;
+    btn.innerHTML = '<span class="btn-loading"><span class="spinner"></span>Evaluating…</span>';
+
+    const payload = {
+      amount:                          parseFloat(document.getElementById('amount').value),
+      wallet_type:                     document.getElementById('wallet_type').value,
+      sender_kyc_complete:             kycOn,
+      wallet_cryptographically_verified: cryptoOn,
+    };
+
+    try {
+      const res  = await fetch('/api/v1/compliance/check', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+      const data = await res.json();
+      showResult(data, payload);
+      await loadHistory();
+    } catch (err) {
+      alert('Network error: ' + err.message);
+    } finally {
+      btn.disabled = false;
+      btn.textContent = 'Run Compliance Check';
+    }
+  }
+
+  function showResult(data, payload) {
+    const isApprove = data.status === 'APPROVE';
+    const card = document.getElementById('result-card');
+    const empty = document.getElementById('result-empty');
+
+    // Rule label
+    let ruleLabel = 'All regulations cleared';
+    if (!isApprove) {
+      if (data.reason.includes('MAS')) ruleLabel = 'MAS PSN02 Violation';
+      else ruleLabel = 'EU MiCA / TFR Violation';
+    }
+
+    document.getElementById('result-icon').className   = `result-icon ${isApprove ? 'approve' : 'reject'}`;
+    document.getElementById('result-icon').textContent  = isApprove ? '✓' : '✕';
+    document.getElementById('result-status').className  = `result-status ${isApprove ? 'approve' : 'reject'}`;
+    document.getElementById('result-status').textContent = data.status;
+    document.getElementById('result-rule').textContent  = ruleLabel;
+    document.getElementById('result-reason').className  = `result-reason ${isApprove ? 'approve' : 'reject'}`;
+    document.getElementById('result-reason').textContent = data.reason;
+
+    document.getElementById('result-meta').innerHTML = `
+      <div class="result-meta-item">
+        <div class="result-meta-label">Amount</div>
+        <div class="result-meta-value">${payload.amount.toLocaleString()}</div>
+      </div>
+      <div class="result-meta-item">
+        <div class="result-meta-label">Wallet</div>
+        <div class="result-meta-value">${payload.wallet_type}</div>
+      </div>
+      <div class="result-meta-item">
+        <div class="result-meta-label">KYC</div>
+        <div class="result-meta-value" style="color:${payload.sender_kyc_complete ? 'var(--approve)' : 'var(--reject)'}">
+          ${payload.sender_kyc_complete ? 'Complete' : 'Incomplete'}
+        </div>
+      </div>
+      <div class="result-meta-item">
+        <div class="result-meta-label">Crypto Proof</div>
+        <div class="result-meta-value" style="color:${payload.wallet_cryptographically_verified ? 'var(--approve)' : 'var(--reject)'}">
+          ${payload.wallet_cryptographically_verified ? 'Verified' : 'Unverified'}
+        </div>
+      </div>
+    `;
+
+    card.className = `result-card visible ${isApprove ? 'approve' : 'reject'}`;
+    empty.style.display = 'none';
+  }
+
+  // ── History ───────────────────────────────────────────────────
+  async function loadHistory() {
+    try {
+      const res  = await fetch('/api/v1/compliance/history?limit=100');
+      const data = await res.json();
+      renderHistory(data);
+      updateStats(data.records);
+    } catch (err) {
+      document.getElementById('history-body').innerHTML =
+        `<tr><td colspan="8" class="table-empty">Error loading history</td></tr>`;
+    }
+  }
+
+  function renderHistory(data) {
+    document.getElementById('history-count').textContent = data.total;
+    const tbody = document.getElementById('history-body');
+
+    if (!data.records.length) {
+      tbody.innerHTML = `<tr><td colspan="8" class="table-empty">No transactions yet</td></tr>`;
+      return;
+    }
+
+    tbody.innerHTML = data.records.map(r => {
+      const isApprove = r.status === 'APPROVE';
+      const wClass    = r.wallet_type === 'Hosted' ? 'hosted' : 'unhosted';
+      const ts        = new Date(r.checked_at).toLocaleString('en-GB', {
+        day:'2-digit', month:'short', hour:'2-digit', minute:'2-digit', second:'2-digit'
+      });
+
+      return `
+        <tr>
+          <td class="mono" style="color:var(--text-3)">#${r.id}</td>
+          <td><span class="badge ${isApprove ? 'approve' : 'reject'}">${r.status}</span></td>
+          <td class="mono">${r.amount.toLocaleString()}</td>
+          <td><span class="wallet-pill ${wClass}">${r.wallet_type}</span></td>
+          <td style="color:${r.sender_kyc_complete ? 'var(--approve)' : 'var(--reject)'};font-size:13px">
+            ${r.sender_kyc_complete ? '✓ Yes' : '✕ No'}
+          </td>
+          <td style="color:${r.wallet_cryptographically_verified ? 'var(--approve)' : 'var(--reject)'};font-size:13px">
+            ${r.wallet_cryptographically_verified ? '✓ Yes' : '✕ No'}
+          </td>
+          <td class="reason-cell" title="${r.reason}">${r.reason}</td>
+          <td class="time-cell">${ts}</td>
+        </tr>
+      `;
+    }).join('');
+  }
+
+  function updateStats(records) {
+    const total   = records.length;
+    const approved = records.filter(r => r.status === 'APPROVE').length;
+    const rejected = total - approved;
+    const rate    = total ? Math.round((approved / total) * 100) : 0;
+
+    document.getElementById('stat-total').textContent   = total;
+    document.getElementById('stat-approve').textContent = approved;
+    document.getElementById('stat-reject').textContent  = rejected;
+    document.getElementById('stat-rate').textContent    = rate + '%';
+  }
+
+  function scrollToHistory() {
+    document.getElementById('history-section').scrollIntoView({ behavior: 'smooth' });
+  }
+
+  // ── Init ──────────────────────────────────────────────────────
+  loadHistory();
+</script>
+
+</body>
+</html>
