@@ -7,18 +7,18 @@ import { useState } from 'react'
  *   onLoadingChange(bool) — called when loading state changes
  */
 export default function ComplianceForm({ onResult, onLoadingChange }) {
-  const [amount,      setAmount]      = useState('')
-  const [origin,      setOrigin]      = useState('SG')
+  const [amount, setAmount] = useState('')
+  const [origin, setOrigin] = useState('SG')
   const [destination, setDestination] = useState('EU')
   const [institution, setInstitution] = useState('MPI')
-  const [activity,    setActivity]    = useState('transfer')
-  const [asset,       setAsset]       = useState('USDC')
-  const [walletType,  setWalletType]  = useState('Hosted')
-  const [kyc,         setKyc]         = useState(false)
-  const [ownership,   setOwnership]   = useState(false)
-  const [sanctions,   setSanctions]   = useState(false)
-  const [loading,     setLoading]     = useState(false)
-  const [error,       setError]       = useState(null)
+  const [activity, setActivity] = useState('transfer')
+  const [asset, setAsset] = useState('USDC')
+  const [walletType, setWalletType] = useState('Hosted')
+  const [kyc, setKyc] = useState(false)
+  const [ownership, setOwnership] = useState(false)
+  const [sanctions, setSanctions] = useState(false)
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState(null)
 
   const setLoadingState = (val) => {
     setLoading(val)
@@ -40,8 +40,8 @@ export default function ComplianceForm({ onResult, onLoadingChange }) {
       institution_type: institution,
       activity,
       asset,
-      wallet_type:      walletType,
-      amount:           parsed,
+      wallet_type: walletType,
+      amount: parsed,
       evidence: {
         kyc,
         ownership,
@@ -51,9 +51,9 @@ export default function ComplianceForm({ onResult, onLoadingChange }) {
 
     // Backend-compatible payload (existing schema)
     const backendPayload = {
-      amount:                            parsed,
-      wallet_type:                       walletType,
-      sender_kyc_complete:               kyc,
+      amount: parsed,
+      wallet_type: walletType,
+      sender_kyc_complete: kyc,
       wallet_cryptographically_verified: ownership,
     }
 
@@ -61,12 +61,12 @@ export default function ComplianceForm({ onResult, onLoadingChange }) {
 
     try {
       const res = await fetch('/api/v1/compliance/check', {
-        method:  'POST',
+        method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body:    JSON.stringify(backendPayload),
+        body: JSON.stringify(backendPayload),
       })
 
-      const latencyMs  = (performance.now() - t0).toFixed(1)
+      const latencyMs = (performance.now() - t0).toFixed(1)
       const serverTime = res.headers.get('X-Process-Time') ?? null
       const latencyStr = serverTime ? `${serverTime} (server)` : `${latencyMs}ms (client)`
 
@@ -80,15 +80,15 @@ export default function ComplianceForm({ onResult, onLoadingChange }) {
 
       // Build enriched response to match new format for inspector display
       const enrichedResponse = {
-        decision:        data.status === 'APPROVE' ? 'approved' : 'rejected',
-        risk:            data.status === 'APPROVE' ? 'low' : 'high',
-        policy_packs:    ['MAS Pack v0.9.2', 'MiCA Pack v1.0.1'],
+        decision: data.status === 'APPROVE' ? 'approved' : 'rejected',
+        risk: data.status === 'APPROVE' ? 'low' : 'high',
+        policy_packs: ['MAS Pack v0.9.2', 'MiCA Pack v1.0.1'],
         rules_triggered: ['MAS-PSN02', 'MiCA-14', 'EU-TFR'],
-        obligations:     data.status === 'APPROVE'
+        obligations: data.status === 'APPROVE'
           ? ['Travel Rule Required', 'Record Retention']
           : [],
-        reason:          data.reason,
-        status:          data.status,
+        reason: data.reason,
+        status: data.status,
       }
 
       onResult(
@@ -127,7 +127,7 @@ export default function ComplianceForm({ onResult, onLoadingChange }) {
     institution_type: institution,
     activity,
     asset,
-    wallet_type:      walletType,
+    wallet_type: walletType,
     amount: amount ? parseFloat(amount) || 0 : 0,
     evidence: { kyc, ownership, sanctions },
   }
@@ -147,8 +147,8 @@ export default function ComplianceForm({ onResult, onLoadingChange }) {
         {loading && (
           <div className="ml-auto flex items-center gap-1.5 text-[10px] font-mono text-amber-400">
             <svg className="animate-spin h-3 w-3" viewBox="0 0 24 24" fill="none">
-              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
-              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"/>
+              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
             </svg>
             evaluating…
           </div>
@@ -340,8 +340,8 @@ export default function ComplianceForm({ onResult, onLoadingChange }) {
                 disabled:opacity-50
               "
               style={{ boxShadow: 'none' }}
-              onFocus={e  => e.target.style.boxShadow = '0 0 0 3px rgba(99,102,241,0.15)'}
-              onBlur={e   => e.target.style.boxShadow = 'none'}
+              onFocus={e => e.target.style.boxShadow = '0 0 0 3px rgba(99,102,241,0.15)'}
+              onBlur={e => e.target.style.boxShadow = 'none'}
             />
             <span className="absolute right-4 top-1/2 -translate-y-1/2 text-[11px] font-mono font-bold text-slate-600 tracking-widest">
               USD
@@ -416,8 +416,8 @@ export default function ComplianceForm({ onResult, onLoadingChange }) {
                 <span className="relative flex h-5 w-5">
                   <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-30" />
                   <svg className="animate-spin relative h-5 w-5 text-amber-300" viewBox="0 0 24 24" fill="none">
-                    <circle className="opacity-20" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3"/>
-                    <path className="opacity-80" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"/>
+                    <circle className="opacity-20" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" />
+                    <path className="opacity-80" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
                   </svg>
                 </span>
                 <span className="tracking-[0.2em] text-amber-200">EVALUATING POLICY…</span>
@@ -442,7 +442,7 @@ function ToggleRow({ id, label, sublabel, checked, onChange, disabled }) {
       htmlFor={id}
       className={`flex items-center gap-4 p-4 rounded-xl border select-none transition-all duration-200 ${disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
       style={{
-        borderColor:     checked ? 'rgba(99,102,241,0.35)' : 'rgba(255,255,255,0.06)',
+        borderColor: checked ? 'rgba(99,102,241,0.35)' : 'rgba(255,255,255,0.06)',
         backgroundColor: checked ? 'rgba(99,102,241,0.07)' : 'rgba(255,255,255,0.02)',
       }}
     >
