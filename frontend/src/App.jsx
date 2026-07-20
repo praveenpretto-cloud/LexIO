@@ -31,8 +31,9 @@ export default function App() {
       return
     }
 
-    // Strip UI-only metadata before showing in inspector
-    const { _amount, _wallet, ...responseForInspector } = data
+    // Strip UI-only metadata and raw backend fields before showing in inspector
+    // eslint-disable-next-line no-unused-vars
+    const { _amount, _asset, status, reason, ...responseForInspector } = data
 
     setLastResponse(responseForInspector)
     setResult(data)
@@ -59,15 +60,24 @@ export default function App() {
         <div className="flex items-end justify-between">
           <div>
             <h1 className="text-3xl font-black tracking-tight text-white">
-              Compliance{' '}
-              <span style={{ color: '#818cf8' }}>Compiler</span>
+              Programmable{' '}
+              <span style={{ color: '#818cf8' }}>Policy Engine</span>
             </h1>
             <p className="text-sm text-slate-500 mt-1">
-              Evaluate cross-border transfers against MAS PSN02 &amp; EU MiCA / TFR regulations.
+              Evaluate regulated digital asset transactions using machine-executable policy rules derived from MAS and MiCA frameworks.
+            </p>
+            <p className="text-[11px] font-mono text-slate-700 mt-1.5 tracking-wide">
+              Powered by the{' '}
+              <span
+                className="font-semibold"
+                style={{ color: 'rgba(129,140,248,0.55)' }}
+              >
+                LexIO Compliance Compiler
+              </span>
             </p>
           </div>
           <div className="hidden md:flex items-center gap-2">
-            {['MAS · SGD 1,500', 'EU TFR · EUR 1,000'].map(r => (
+            {['MAS Pack v0.9.2', 'MiCA Pack v1.0.1', 'EU TFR Pack v0.8.4'].map(r => (
               <span
                 key={r}
                 className="text-[11px] font-mono px-3 py-1.5 rounded-full border border-white/6 text-slate-500 bg-white/2"

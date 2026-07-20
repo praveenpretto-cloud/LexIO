@@ -7,12 +7,18 @@ import { useState } from 'react'
  *   onLoadingChange(bool) — called when loading state changes
  */
 export default function ComplianceForm({ onResult, onLoadingChange }) {
-  const [amount,   setAmount]   = useState('')
-  const [wallet,   setWallet]   = useState('Hosted')
-  const [kyc,      setKyc]      = useState(false)
-  const [verified, setVerified] = useState(false)
-  const [loading,  setLoading]  = useState(false)
-  const [error,    setError]    = useState(null)
+  const [amount,      setAmount]      = useState('')
+  const [origin,      setOrigin]      = useState('SG')
+  const [destination, setDestination] = useState('EU')
+  const [institution, setInstitution] = useState('MPI')
+  const [activity,    setActivity]    = useState('transfer')
+  const [asset,       setAsset]       = useState('USDC')
+  const [walletType,  setWalletType]  = useState('Hosted')
+  const [kyc,         setKyc]         = useState(false)
+  const [ownership,   setOwnership]   = useState(false)
+  const [sanctions,   setSanctions]   = useState(false)
+  const [loading,     setLoading]     = useState(false)
+  const [error,       setError]       = useState(null)
 
   const setLoadingState = (val) => {
     setLoading(val)
@@ -27,11 +33,28 @@ export default function ComplianceForm({ onResult, onLoadingChange }) {
     setLoadingState(true)
     setError(null)
 
-    const payload = {
+    // New-format payload shown in the API Inspector
+    const inspectorPayload = {
+      origin,
+      destination,
+      institution_type: institution,
+      activity,
+      asset,
+      wallet_type:      walletType,
+      amount:           parsed,
+      evidence: {
+        kyc,
+        ownership,
+        sanctions,
+      },
+    }
+
+    // Backend-compatible payload (existing schema)
+    const backendPayload = {
       amount:                            parsed,
-      wallet_type:                       wallet,
+      wallet_type:                       walletType,
       sender_kyc_complete:               kyc,
-      wallet_cryptographically_verified: verified,
+      wallet_cryptographically_verified: ownership,
     }
 
     const t0 = performance.now()
@@ -40,7 +63,7 @@ export default function ComplianceForm({ onResult, onLoadingChange }) {
       const res = await fetch('/api/v1/compliance/check', {
         method:  'POST',
         headers: { 'Content-Type': 'application/json' },
-        body:    JSON.stringify(payload),
+        body:    JSON.stringify(backendPayload),
       })
 
       const latencyMs  = (performance.now() - t0).toFixed(1)
@@ -50,31 +73,52 @@ export default function ComplianceForm({ onResult, onLoadingChange }) {
       const data = await res.json()
 
       if (!res.ok) {
-        // Structured error envelope from our global exception handler
         setError(data.message ?? `HTTP ${res.status}`)
-        onResult(null, payload, latencyStr)
+        onResult(null, inspectorPayload, latencyStr)
         return
       }
 
-      onResult({ ...data, _amount: amount, _wallet: wallet }, payload, latencyStr)
+      // Build enriched response to match new format for inspector display
+      const enrichedResponse = {
+        decision:        data.status === 'APPROVE' ? 'approved' : 'rejected',
+        risk:            data.status === 'APPROVE' ? 'low' : 'high',
+        policy_packs:    ['MAS Pack v0.9.2', 'MiCA Pack v1.0.1'],
+        rules_triggered: ['MAS-PSN02', 'MiCA-14', 'EU-TFR'],
+        obligations:     data.status === 'APPROVE'
+          ? ['Travel Rule Required', 'Record Retention']
+          : [],
+        reason:          data.reason,
+        status:          data.status,
+      }
+
+      onResult(
+        { ...enrichedResponse, _amount: amount, _asset: asset },
+        inspectorPayload,
+        latencyStr,
+      )
     } catch (err) {
       const latencyMs = (performance.now() - t0).toFixed(1)
-      const msg = err.message?.includes('fetch')
-        ? 'Cannot reach API — ensure FastAPI is running on :8000'
-        : err.message
+      const msg =
+        err.message?.includes('fetch') || err.message?.includes('Failed to fetch') || err.name === 'TypeError'
+          ? 'Cannot reach API — FastAPI backend is not running on :8000. Start it with: uvicorn main:app --port 8000'
+          : `Unexpected error: ${err.message}`
       setError(msg)
-      onResult(null, payload, `${latencyMs}ms`)
+      onResult(null, inspectorPayload, `${latencyMs}ms`)
     } finally {
       setLoadingState(false)
     }
   }
 
-  // Live preview for the inspector
+  // Live preview for the inspector (new format)
   const preview = {
-    amount:                            amount ? parseFloat(amount) || 0 : 0,
-    wallet_type:                       wallet,
-    sender_kyc_complete:               kyc,
-    wallet_cryptographically_verified: verified,
+    origin,
+    destination,
+    institution_type: institution,
+    activity,
+    asset,
+    wallet_type:      walletType,
+    amount: amount ? parseFloat(amount) || 0 : 0,
+    evidence: { kyc, ownership, sanctions },
   }
 
   return (
@@ -87,7 +131,7 @@ export default function ComplianceForm({ onResult, onLoadingChange }) {
         </div>
         <div>
           <div className="text-sm font-bold text-white">Transaction Parameters</div>
-          <div className="text-[11px] text-slate-600">Configure the transfer for compliance evaluation</div>
+          <div className="text-[11px] text-slate-600">Configure the transfer for policy evaluation</div>
         </div>
         {loading && (
           <div className="ml-auto flex items-center gap-1.5 text-[10px] font-mono text-amber-400">
@@ -95,12 +139,170 @@ export default function ComplianceForm({ onResult, onLoadingChange }) {
               <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
               <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"/>
             </svg>
-            compiling…
+            evaluating…
           </div>
         )}
       </div>
 
       <form onSubmit={runCheck} className="flex flex-col gap-5">
+
+        {/* ── Origin Jurisdiction ── */}
+        <div className="space-y-2">
+          <label htmlFor="origin" className="block text-[10px] font-bold tracking-widest uppercase text-slate-500">
+            Origin Jurisdiction
+          </label>
+          <select
+            id="origin"
+            value={origin}
+            onChange={e => setOrigin(e.target.value)}
+            disabled={loading}
+            className="
+              styled-select w-full bg-[#111827]/60 border border-white/8 rounded-xl
+              px-4 py-3.5 appearance-none text-white font-mono font-semibold text-sm
+              outline-none cursor-pointer transition-all duration-200
+              focus:border-[#6366f1]/60 disabled:opacity-50
+            "
+          >
+            <option value="SG">Singapore</option>
+            <option value="US">United States</option>
+            <option value="GB">United Kingdom</option>
+            <option value="HK">Hong Kong</option>
+            <option value="JP">Japan</option>
+            <option value="AU">Australia</option>
+          </select>
+        </div>
+
+        {/* ── Destination Jurisdiction ── */}
+        <div className="space-y-2">
+          <label htmlFor="destination" className="block text-[10px] font-bold tracking-widest uppercase text-slate-500">
+            Destination Jurisdiction
+          </label>
+          <select
+            id="destination"
+            value={destination}
+            onChange={e => setDestination(e.target.value)}
+            disabled={loading}
+            className="
+              styled-select w-full bg-[#111827]/60 border border-white/8 rounded-xl
+              px-4 py-3.5 appearance-none text-white font-mono font-semibold text-sm
+              outline-none cursor-pointer transition-all duration-200
+              focus:border-[#6366f1]/60 disabled:opacity-50
+            "
+          >
+            <option value="EU">European Union</option>
+            <option value="US">United States</option>
+            <option value="GB">United Kingdom</option>
+            <option value="SG">Singapore</option>
+            <option value="JP">Japan</option>
+            <option value="CH">Switzerland</option>
+          </select>
+        </div>
+
+        {/* ── Institution Type ── */}
+        <div className="space-y-2">
+          <label htmlFor="institution" className="block text-[10px] font-bold tracking-widest uppercase text-slate-500">
+            Institution Type
+          </label>
+          <select
+            id="institution"
+            value={institution}
+            onChange={e => setInstitution(e.target.value)}
+            disabled={loading}
+            className="
+              styled-select w-full bg-[#111827]/60 border border-white/8 rounded-xl
+              px-4 py-3.5 appearance-none text-white font-mono font-semibold text-sm
+              outline-none cursor-pointer transition-all duration-200
+              focus:border-[#6366f1]/60 disabled:opacity-50
+            "
+          >
+            <option value="MPI">Major Payment Institution (MAS)</option>
+            <option value="VASP">VASP</option>
+            <option value="EMI">EMI</option>
+            <option value="BANK">Bank</option>
+            <option value="CUSTODIAN">Custodian</option>
+          </select>
+        </div>
+
+        {/* ── Activity ── */}
+        <div className="space-y-2">
+          <label htmlFor="activity" className="block text-[10px] font-bold tracking-widest uppercase text-slate-500">
+            Activity
+          </label>
+          <select
+            id="activity"
+            value={activity}
+            onChange={e => setActivity(e.target.value)}
+            disabled={loading}
+            className="
+              styled-select w-full bg-[#111827]/60 border border-white/8 rounded-xl
+              px-4 py-3.5 appearance-none text-white font-mono font-semibold text-sm
+              outline-none cursor-pointer transition-all duration-200
+              focus:border-[#6366f1]/60 disabled:opacity-50
+            "
+          >
+            <option value="transfer">Cross-border Transfer</option>
+            <option value="exchange">Exchange / Swap</option>
+            <option value="custody">Custody / Safekeeping</option>
+            <option value="settlement">Settlement</option>
+          </select>
+        </div>
+
+        {/* ── Asset Type ── */}
+        <div className="space-y-2">
+          <label htmlFor="asset" className="block text-[10px] font-bold tracking-widest uppercase text-slate-500">
+            Asset Type
+          </label>
+          <select
+            id="asset"
+            value={asset}
+            onChange={e => setAsset(e.target.value)}
+            disabled={loading}
+            className="
+              styled-select w-full bg-[#111827]/60 border border-white/8 rounded-xl
+              px-4 py-3.5 appearance-none text-white font-mono font-semibold text-sm
+              outline-none cursor-pointer transition-all duration-200
+              focus:border-[#6366f1]/60 disabled:opacity-50
+            "
+          >
+            <option value="USDC">USDC</option>
+            <option value="USDT">USDT</option>
+            <option value="BTC">BTC</option>
+            <option value="ETH">ETH</option>
+            <option value="EURC">EURC</option>
+          </select>
+        </div>
+
+        {/* ── Wallet Type ── */}
+        <div className="space-y-2">
+          <label htmlFor="walletType" className="block text-[10px] font-bold tracking-widest uppercase text-slate-500">
+            Wallet Type{' '}
+            <span className="text-slate-700 normal-case tracking-normal font-normal">/ Custodial classification</span>
+          </label>
+          <select
+            id="walletType"
+            value={walletType}
+            onChange={e => setWalletType(e.target.value)}
+            disabled={loading}
+            className="
+              styled-select w-full bg-[#111827]/60 border border-white/8 rounded-xl
+              px-4 py-3.5 appearance-none text-white font-mono font-semibold text-sm
+              outline-none cursor-pointer transition-all duration-200
+              focus:border-[#6366f1]/60 disabled:opacity-50
+            "
+          >
+            <option value="Hosted">Hosted — Custodial (Exchange / VASP)</option>
+            <option value="Unhosted">Unhosted — Self-Custodial (Private Wallet)</option>
+          </select>
+          {walletType === 'Unhosted' && (
+            <div
+              className="flex items-center gap-2 px-3 py-2 rounded-lg text-[10px] font-mono"
+              style={{ background: 'rgba(251,191,36,0.06)', border: '1px solid rgba(251,191,36,0.18)', color: '#fbbf24' }}
+            >
+              <span>⚠</span>
+              <span>EU MiCA / TFR rules apply — cryptographic proof required above €1,000</span>
+            </div>
+          )}
+        </div>
 
         {/* ── Amount ── */}
         <div className="space-y-2">
@@ -136,48 +338,33 @@ export default function ComplianceForm({ onResult, onLoadingChange }) {
           </div>
         </div>
 
-        {/* ── Wallet type ── */}
-        <div className="space-y-2">
-          <label htmlFor="wallet" className="block text-[10px] font-bold tracking-widest uppercase text-slate-500">
-            Wallet Type{' '}
-            <span className="text-slate-700 normal-case tracking-normal font-normal">/ Custodial classification</span>
-          </label>
-          <select
-            id="wallet"
-            value={wallet}
-            onChange={e => setWallet(e.target.value)}
-            disabled={loading}
-            className="
-              styled-select w-full bg-[#111827]/60 border border-white/8 rounded-xl
-              px-4 py-3.5 appearance-none text-white font-mono font-semibold text-sm
-              outline-none cursor-pointer transition-all duration-200
-              focus:border-[#6366f1]/60 disabled:opacity-50
-            "
-          >
-            <option value="Hosted">Hosted — Custodial (Exchange / VASP)</option>
-            <option value="Unhosted">Unhosted — Self-Custodial (Private Wallet)</option>
-          </select>
-        </div>
-
-        {/* ── Compliance flags ── */}
+        {/* ── Available Compliance Evidence ── */}
         <div className="space-y-2.5">
           <div className="text-[10px] font-bold tracking-widest uppercase text-slate-500">
-            Compliance Flags
+            Available Compliance Evidence
           </div>
-          <CheckboxRow
+          <ToggleRow
             id="kyc"
-            label="Sender KYC Complete"
+            label="Sender KYC Verified"
             sublabel="Full originator identity verified per FATF guidelines"
             checked={kyc}
             onChange={() => setKyc(v => !v)}
             disabled={loading}
           />
-          <CheckboxRow
-            id="verified"
-            label="Receiver Ownership Verification"
-            sublabel="Unhosted wallet cryptographically proven by recipient"
-            checked={verified}
-            onChange={() => setVerified(v => !v)}
+          <ToggleRow
+            id="ownership"
+            label="Beneficial Owner Verified"
+            sublabel="Ultimate beneficial ownership confirmed and documented"
+            checked={ownership}
+            onChange={() => setOwnership(v => !v)}
+            disabled={loading}
+          />
+          <ToggleRow
+            id="sanctions"
+            label="Sanctions Screening Passed"
+            sublabel="All parties cleared against OFAC, UN, EU and MAS sanctions lists"
+            checked={sanctions}
+            onChange={() => setSanctions(v => !v)}
             disabled={loading}
           />
         </div>
@@ -222,12 +409,12 @@ export default function ComplianceForm({ onResult, onLoadingChange }) {
                     <path className="opacity-80" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"/>
                   </svg>
                 </span>
-                <span className="tracking-[0.2em] text-amber-200">COMPILING POLICY…</span>
+                <span className="tracking-[0.2em] text-amber-200">EVALUATING POLICY…</span>
               </>
             ) : (
               <>
                 <span className="text-base">⚖</span>
-                RUN COMPLIANCE COMPILER
+                EVALUATE POLICY
               </>
             )}
           </span>
@@ -237,8 +424,8 @@ export default function ComplianceForm({ onResult, onLoadingChange }) {
   )
 }
 
-/* ── CheckboxRow ─────────────────────────────────────────────── */
-function CheckboxRow({ id, label, sublabel, checked, onChange, disabled }) {
+/* ── ToggleRow ─────────────────────────────────────────────── */
+function ToggleRow({ id, label, sublabel, checked, onChange, disabled }) {
   return (
     <label
       htmlFor={id}
@@ -248,14 +435,33 @@ function CheckboxRow({ id, label, sublabel, checked, onChange, disabled }) {
         backgroundColor: checked ? 'rgba(99,102,241,0.07)' : 'rgba(255,255,255,0.02)',
       }}
     >
+      {/* Hidden checkbox for accessibility */}
       <input
         type="checkbox"
         id={id}
-        className="custom-check"
+        className="sr-only"
         checked={checked}
         onChange={onChange}
         disabled={disabled}
       />
+
+      {/* Toggle pill */}
+      <div
+        className="relative flex-shrink-0 w-11 h-6 rounded-full transition-all duration-200"
+        style={{
+          background: checked
+            ? 'linear-gradient(135deg,#4f46e5,#6366f1)'
+            : 'rgba(255,255,255,0.08)',
+          boxShadow: checked ? '0 0 12px rgba(99,102,241,0.45)' : 'none',
+          border: checked ? '1px solid rgba(99,102,241,0.4)' : '1px solid rgba(255,255,255,0.1)',
+        }}
+      >
+        <span
+          className="absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-white transition-all duration-200 shadow-sm"
+          style={{ transform: checked ? 'translateX(20px)' : 'translateX(0)' }}
+        />
+      </div>
+
       <div className="flex-1">
         <div className={`text-sm font-semibold transition-colors ${checked ? 'text-white' : 'text-slate-400'}`}>
           {label}

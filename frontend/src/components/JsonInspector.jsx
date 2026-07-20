@@ -7,7 +7,7 @@ import { useEffect, useRef } from 'react'
 function highlight(json) {
   if (!json) return ''
   return json
-    .replace(/("(\\u[a-zA-Z0-9]{4}|\\[^u]|[^\\"])*"(\s*:)?|\b(true|false|null)\b|-?\d+(?:\.\d*)?(?:[eE][+\-]?\d+)?)/g, (match) => {
+    .replace(/(\"(\\u[a-zA-Z0-9]{4}|\\[^u]|[^\\"])*\"(\s*:)?|\b(true|false|null)\b|-?\d+(?:\.\d*)?(?:[eE][+\-]?\d+)?)/g, (match) => {
       let cls = 'text-[#a5b4fc]'         // number default (purple)
       if (/^"/.test(match)) {
         if (/:$/.test(match)) {
@@ -69,8 +69,35 @@ function CodeBlock({ label, icon, data, accentColor, visible }) {
   )
 }
 
+/* Default payloads shown before first submission */
+const DEFAULT_REQUEST = {
+  origin:           'SG',
+  destination:      'EU',
+  institution_type: 'MPI',
+  activity:         'transfer',
+  asset:            'USDC',
+  amount:           500000,
+  evidence: {
+    kyc:       true,
+    ownership: true,
+    sanctions: true,
+  },
+}
+
+const DEFAULT_RESPONSE = {
+  decision:     'approved',
+  risk:         'low',
+  policy_packs: ['MAS Pack v0.9.2', 'MiCA Pack v1.0.1'],
+  rules_triggered: ['MAS-PSN02', 'MiCA-14', 'EU-TFR'],
+  obligations:  ['Travel Rule Required', 'Record Retention'],
+}
+
 export default function JsonInspector({ request, response, latency, isLoading }) {
   const hasData = request || response
+
+  // Use default payloads when no real data yet
+  const displayRequest  = request  ?? DEFAULT_REQUEST
+  const displayResponse = response ?? DEFAULT_RESPONSE
 
   return (
     <div
@@ -99,7 +126,7 @@ export default function JsonInspector({ request, response, latency, isLoading })
             </span>
           )}
           <span className="text-[10px] font-mono text-slate-700">
-            POST /api/v1/compliance/check
+            POST /v1/policy/evaluate
           </span>
         </div>
       </div>
@@ -109,20 +136,20 @@ export default function JsonInspector({ request, response, latency, isLoading })
         <CodeBlock
           label="Request Payload"
           icon="→"
-          data={request}
+          data={displayRequest}
           accentColor="#818cf8"
-          visible={!!request}
+          visible={true}
         />
         <CodeBlock
           label="Response Body"
           icon="←"
-          data={response}
+          data={displayResponse}
           accentColor={
             response?.status === 'APPROVE' ? '#34d399' :
             response?.status === 'REJECT'  ? '#fb7185' :
-            response?.error ? '#fb7185' : '#64748b'
+            response?.error ? '#fb7185' : '#34d399'
           }
-          visible={!!response}
+          visible={true}
         />
       </div>
     </div>

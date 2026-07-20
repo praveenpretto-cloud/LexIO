@@ -1,11 +1,12 @@
-// ResultPanel.jsx — decision panel with smooth opacity/transform fade-in on each result
+// ResultPanel.jsx — decision panel with Policy Decision Report template
 
 import { useEffect, useRef, useState } from 'react'
 
 function detectRule(reason) {
   if (!reason) return null
-  if (reason.includes('MAS'))    return { label: 'MAS PSN02',     color: 'text-cyan-400',   bg: 'bg-cyan-400/10 border-cyan-400/20' }
-  if (reason.includes('EU TFR')) return { label: 'EU MiCA / TFR', color: 'text-violet-400', bg: 'bg-violet-400/10 border-violet-400/20' }
+  if (reason.includes('MAS'))    return { label: 'MAS Pack v0.9.2',  color: 'text-cyan-400',   bg: 'bg-cyan-400/10 border-cyan-400/20' }
+  if (reason.includes('EU TFR')) return { label: 'EU TFR Pack v0.8.4', color: 'text-violet-400', bg: 'bg-violet-400/10 border-violet-400/20' }
+  if (reason.includes('MiCA'))   return { label: 'MiCA Pack v1.0.1', color: 'text-fuchsia-400', bg: 'bg-fuchsia-400/10 border-fuchsia-400/20' }
   return { label: 'ALL CLEAR', color: 'text-emerald-400', bg: 'bg-emerald-400/10 border-emerald-400/20' }
 }
 
@@ -44,32 +45,15 @@ export default function ResultPanel({ result, flashKey, isLoading }) {
         </div>
         <div>
           <div className="text-white font-bold text-sm tracking-wide">Evaluating Policy…</div>
-          <div className="text-slate-600 text-xs mt-1 font-mono">Running MAS PSN02 + EU TFR rules</div>
+          <div className="text-slate-600 text-xs mt-1 font-mono">Running MAS Pack · MiCA Pack · EU TFR rules</div>
         </div>
       </div>
     )
   }
 
-  /* ── Empty state ── */
+  /* ── Empty state — replaced with Policy Decision Report template ── */
   if (!result) {
-    return (
-      <div className="h-full flex flex-col items-center justify-center gap-5 text-center p-10">
-        <div className="w-20 h-20 rounded-full border-2 border-dashed border-white/8 flex items-center justify-center">
-          <span className="text-3xl opacity-20">⚖</span>
-        </div>
-        <div>
-          <div className="text-slate-600 font-semibold">Awaiting Submission</div>
-          <div className="text-slate-700 text-xs mt-1">Configure parameters and run the compiler</div>
-        </div>
-        <div className="flex gap-2">
-          {['MAS PSN02', 'EU MiCA', 'TFR'].map(r => (
-            <span key={r} className="text-[10px] font-mono px-2 py-1 rounded border border-white/5 text-slate-700">
-              {r}
-            </span>
-          ))}
-        </div>
-      </div>
-    )
+    return <PolicyDecisionTemplate />
   }
 
   /* ── Decision state with fade-in transition ── */
@@ -147,7 +131,7 @@ export default function ResultPanel({ result, flashKey, isLoading }) {
       <div className="grid grid-cols-3 gap-3">
         {[
           { label: 'Amount', value: result._amount ? Number(result._amount).toLocaleString() : '—' },
-          { label: 'Wallet', value: result._wallet ?? '—' },
+          { label: 'Asset',  value: result._asset ?? '—' },
           { label: 'Engine', value: 'v1.1' },
         ].map(m => (
           <div key={m.label} className="rounded-lg bg-white/3 border border-white/5 p-3 text-center">
@@ -155,6 +139,116 @@ export default function ResultPanel({ result, flashKey, isLoading }) {
             <div className="text-xs font-mono font-semibold text-slate-300">{m.value}</div>
           </div>
         ))}
+      </div>
+    </div>
+  )
+}
+
+/* ── Policy Decision Report template (empty state replacement) ─────── */
+function PolicyDecisionTemplate() {
+  const traceRules = [
+    { code: 'Rule 14.2', desc: 'Sender KYC',              status: 'PASS' },
+    { code: 'Rule 18',   desc: 'Travel Rule',              status: 'PASS' },
+    { code: 'Rule 27',   desc: 'Destination Jurisdiction', status: 'PASS' },
+    { code: 'Rule 35',   desc: 'Sanctions Screening',      status: 'PASS' },
+  ]
+
+  return (
+    <div className="h-full flex flex-col p-6 gap-5">
+
+      {/* Header — status badge */}
+      <div>
+        <div className="text-[10px] font-bold tracking-widest uppercase text-slate-600 mb-3">
+          Policy Decision Report
+        </div>
+        <div
+          className="inline-flex items-center gap-2.5 px-4 py-2.5 rounded-full border"
+          style={{
+            background:  'rgba(16,185,129,0.10)',
+            borderColor: 'rgba(16,185,129,0.28)',
+            animation:   'glowGreen 3s ease-in-out infinite',
+          }}
+        >
+          <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse" />
+          <span className="font-black text-sm tracking-wider text-emerald-300">
+            🟢 APPROVED
+          </span>
+          <span className="text-[10px] font-mono text-slate-500 ml-1">
+            Risk: LOW &nbsp;|&nbsp; Decision Confidence: HIGH
+          </span>
+        </div>
+      </div>
+
+      {/* Applicable Obligations */}
+      <div
+        className="rounded-xl border p-4"
+        style={{
+          background:  'rgba(16,185,129,0.05)',
+          borderColor: 'rgba(16,185,129,0.18)',
+        }}
+      >
+        <div className="text-[10px] font-bold uppercase tracking-widest text-emerald-600 mb-3">
+          Applicable Obligations
+        </div>
+        <div className="space-y-2">
+          {[
+            { icon: '📋', text: 'Travel Rule Required', detail: 'Originator & beneficiary info must be transmitted' },
+            { icon: '🗂️', text: 'Record Retention: 5 Years', detail: 'All transaction records to be retained per MAS PSN02' },
+          ].map(ob => (
+            <div
+              key={ob.text}
+              className="flex items-start gap-3 p-2.5 rounded-lg"
+              style={{ background: 'rgba(52,211,153,0.06)', border: '1px solid rgba(52,211,153,0.12)' }}
+            >
+              <span className="text-base mt-0.5">{ob.icon}</span>
+              <div>
+                <div className="text-xs font-bold text-emerald-300">{ob.text}</div>
+                <div className="text-[10px] text-slate-600 mt-0.5 font-mono">{ob.detail}</div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Decision Trace */}
+      <div className="flex-1">
+        <div className="text-[10px] font-bold uppercase tracking-widest text-slate-600 mb-3">
+          Decision Trace
+        </div>
+        <div className="space-y-2">
+          {traceRules.map((rule, i) => (
+            <div
+              key={rule.code}
+              className="flex items-center gap-3 px-4 py-3 rounded-xl border transition-all duration-200"
+              style={{
+                background:  'rgba(16,185,129,0.04)',
+                borderColor: 'rgba(16,185,129,0.14)',
+                animationDelay: `${i * 80}ms`,
+              }}
+            >
+              <span className="text-emerald-400 font-bold text-sm flex-shrink-0">✓</span>
+              <span className="text-[11px] font-mono font-bold text-[#818cf8] flex-shrink-0 min-w-[64px]">
+                {rule.code}:
+              </span>
+              <span className="text-sm text-slate-300 flex-1">{rule.desc}</span>
+              <span
+                className="text-[10px] font-mono font-black tracking-widest px-2.5 py-0.5 rounded-full"
+                style={{
+                  color:      '#34d399',
+                  background: 'rgba(52,211,153,0.12)',
+                  border:     '1px solid rgba(52,211,153,0.25)',
+                }}
+              >
+                {rule.status}
+              </span>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Subtle prompt */}
+      <div className="text-center text-[10px] font-mono text-slate-700 pt-2 border-t border-white/4">
+        Submit a transaction to generate a live policy evaluation
       </div>
     </div>
   )

@@ -30,13 +30,22 @@ export default function Header({ checkCount }) {
           </div>
         </div>
 
-        {/* Center regulation tags */}
-        <div className="hidden md:flex items-center gap-4">
-          <div className="h-px w-12 bg-gradient-to-r from-transparent to-[#6366f1]/40" />
-          <span className="text-xs font-mono text-slate-500 tracking-widest uppercase">
-            MAS PSN02 · EU MiCA · TFR
-          </span>
-          <div className="h-px w-12 bg-gradient-to-l from-transparent to-[#6366f1]/40" />
+        {/* Center pack version tags */}
+        <div className="hidden md:flex items-center gap-3">
+          <div className="h-px w-8 bg-gradient-to-r from-transparent to-[#6366f1]/40" />
+          {['LexIO MAS Pack v0.9.2', 'MiCA Pack v1.0.1', 'EU TFR Pack v0.8.4'].map((tag, i) => (
+            <span
+              key={tag}
+              className="text-[10px] font-mono px-2.5 py-1 rounded-full border text-slate-400 tracking-wider"
+              style={{
+                borderColor: 'rgba(99,102,241,0.25)',
+                background: 'rgba(99,102,241,0.07)',
+              }}
+            >
+              {tag}
+            </span>
+          ))}
+          <div className="h-px w-8 bg-gradient-to-l from-transparent to-[#6366f1]/40" />
         </div>
 
         {/* Right meta */}
