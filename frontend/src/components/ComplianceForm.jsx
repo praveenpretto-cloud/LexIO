@@ -98,10 +98,21 @@ export default function ComplianceForm({ onResult, onLoadingChange }) {
       )
     } catch (err) {
       const latencyMs = (performance.now() - t0).toFixed(1)
-      const msg =
-        err.message?.includes('fetch') || err.message?.includes('Failed to fetch') || err.name === 'TypeError'
-          ? 'Cannot reach API — FastAPI backend is not running on :8000. Start it with: uvicorn main:app --port 8000'
-          : `Unexpected error: ${err.message}`
+      // Covers: Safari "The string did not match the expected pattern.",
+      // Chrome "Failed to fetch", Firefox "NetworkError", JSON parse
+      // failures (backend returned HTML/502), and all other fetch errors.
+      const isNetworkError =
+        err.name === 'TypeError' ||
+        err.name === 'SyntaxError' ||
+        err.name === 'NetworkError' ||
+        err.message?.toLowerCase().includes('fetch') ||
+        err.message?.toLowerCase().includes('network') ||
+        err.message?.toLowerCase().includes('pattern') ||
+        err.message?.toLowerCase().includes('json') ||
+        err.message?.toLowerCase().includes('failed')
+      const msg = isNetworkError
+        ? 'Cannot reach the API — the backend server is not running or not reachable. Check that FastAPI is running and accessible.'
+        : `Error: ${err.message}`
       setError(msg)
       onResult(null, inspectorPayload, `${latencyMs}ms`)
     } finally {
