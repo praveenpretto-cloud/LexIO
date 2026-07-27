@@ -3,13 +3,10 @@ import Header          from './components/Header'
 import ComplianceForm  from './components/ComplianceForm'
 import ResultPanel     from './components/ResultPanel'
 import SessionHistory  from './components/SessionHistory'
-import JsonInspector   from './components/JsonInspector'
-
 export default function App() {
   const [result,       setResult]       = useState(null)
   const [flashKey,     setFlashKey]     = useState(0)
   const [checkCount,   setCheckCount]   = useState(0)
-  const [history,      setHistory]      = useState([])
   const [isLoading,    setIsLoading]    = useState(false)
   const [lastRequest,  setLastRequest]  = useState(null)
   const [lastResponse, setLastResponse] = useState(null)
@@ -39,13 +36,9 @@ export default function App() {
     setResult(data)
     setFlashKey(k => k + 1)
     setCheckCount(c => c + 1)
-    setHistory(h => [
-      { ...data, ts: new Date().toLocaleTimeString() },
-      ...h.slice(0, 9),
-    ])
   }
 
-  const isApprove = result?.status === 'APPROVE'
+  const isApprove = result?.status?.toUpperCase() === 'APPROVE'
 
   return (
     <div className="relative min-h-screen flex flex-col">
@@ -143,16 +136,10 @@ export default function App() {
           </div>
         </div>
 
-        {/* ── JSON Inspector panel ── */}
-        <JsonInspector
-          request={lastRequest}
-          response={lastResponse}
-          latency={latency}
-          isLoading={isLoading}
-        />
 
-        {/* ── Session history ── */}
-        <SessionHistory history={history} />
+
+        {/* ── Session history (Auto-polling) ── */}
+        <SessionHistory />
 
         {/* ── Footer ── */}
         <div className="flex items-center justify-between text-[10px] font-mono text-slate-700 pb-2">

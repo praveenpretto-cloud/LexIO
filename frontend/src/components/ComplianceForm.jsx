@@ -7,12 +7,27 @@ import { useState } from 'react'
  *   onLoadingChange(bool) — called when loading state changes
  */
 export default function ComplianceForm({ onResult, onLoadingChange }) {
+  // Default addresses per network
+  const DEFAULTS = {
+    Stellar: {
+      sender:   'GDHR3WJVS3IM5U7DFC3CBFMXPVLXA254MCLJRSJVHUR5BTHA2XJ7YHOZ',
+      receiver: 'GB3ST5WM4RBIOTBHS4GUUFH6VN5FEMVFZKAMVXRLL4D55DVQVKG7X66E',
+    },
+    XRPL: {
+      sender:   'rapGvMNARmA46HRNoGBiTy1nEwiKdVTfPw',
+      receiver: 'rEGcPEhZbvFMr14wBhm3TUc1EanWWMU367',
+    },
+  }
+
+  const [senderAddress, setSenderAddress] = useState(DEFAULTS.Stellar.sender)
+  const [receiverAddress, setReceiverAddress] = useState(DEFAULTS.Stellar.receiver)
   const [amount, setAmount] = useState('')
   const [origin, setOrigin] = useState('SG')
   const [destination, setDestination] = useState('EU')
   const [institution, setInstitution] = useState('MPI')
   const [activity, setActivity] = useState('transfer')
   const [asset, setAsset] = useState('USDC')
+  const [network, setNetwork] = useState('Stellar')
   const [walletType, setWalletType] = useState('Hosted')
   const [kyc, setKyc] = useState(false)
   const [ownership, setOwnership] = useState(false)
@@ -51,10 +66,16 @@ export default function ComplianceForm({ onResult, onLoadingChange }) {
 
     // Backend-compatible payload (existing schema)
     const backendPayload = {
+      sender_address: senderAddress,
+      receiver_address: receiverAddress,
       amount: parsed,
+      stablecoin_type: asset,
+      sender_jurisdiction: origin,
+      receiver_jurisdiction: destination,
       wallet_type: walletType,
       sender_kyc_complete: kyc,
       wallet_cryptographically_verified: ownership,
+      network,
     }
 
     const t0 = performance.now()
@@ -80,15 +101,16 @@ export default function ComplianceForm({ onResult, onLoadingChange }) {
 
       // Build enriched response to match new format for inspector display
       const enrichedResponse = {
-        decision: data.status === 'APPROVE' ? 'approved' : 'rejected',
-        risk: data.status === 'APPROVE' ? 'low' : 'high',
+        decision: data.status?.toUpperCase() === 'APPROVE' ? 'approved' : 'rejected',
+        risk: data.status?.toUpperCase() === 'APPROVE' ? 'low' : 'high',
         policy_packs: ['MAS Pack v0.9.2', 'MiCA Pack v1.0.1'],
         rules_triggered: ['MAS-PSN02', 'MiCA-14', 'EU-TFR'],
-        obligations: data.status === 'APPROVE'
+        obligations: data.status?.toUpperCase() === 'APPROVE'
           ? ['Travel Rule Required', 'Record Retention']
           : [],
         reason: data.reason,
         status: data.status,
+        authorization_hash: data.authorization_hash,
       }
 
       onResult(
@@ -122,6 +144,8 @@ export default function ComplianceForm({ onResult, onLoadingChange }) {
 
   // Live preview for the inspector (new format)
   const preview = {
+    senderAddress,
+    receiverAddress,
     origin,
     destination,
     institution_type: institution,
@@ -258,29 +282,63 @@ export default function ComplianceForm({ onResult, onLoadingChange }) {
           </select>
         </div>
 
+        {/* ── Network Selector ── */}
+        <div className="space-y-2">
+          <label className="block text-[10px] font-bold tracking-widest uppercase text-slate-500">
+            Blockchain Network
+          </label>
+          <div className="flex gap-2">
+            {['Stellar', 'XRPL'].map(net => (
+              <button
+                key={net}
+                type="button"
+                disabled={loading}
+                onClick={() => {
+                  setNetwork(net)
+                  setSenderAddress(DEFAULTS[net].sender)
+                  setReceiverAddress(DEFAULTS[net].receiver)
+                }}
+                className="flex-1 py-3 rounded-xl font-bold text-sm tracking-wide border transition-all duration-200 disabled:opacity-50"
+                style={{
+                  background:   network === net ? 'rgba(99,102,241,0.15)' : 'rgba(255,255,255,0.03)',
+                  borderColor:  network === net ? 'rgba(99,102,241,0.5)'  : 'rgba(255,255,255,0.08)',
+                  color:        network === net ? '#a5b4fc'               : '#475569',
+                  boxShadow:    network === net ? '0 0 16px rgba(99,102,241,0.2)' : 'none',
+                }}
+              >
+                {net === 'Stellar' ? '✦ Stellar' : '◈ XRPL'}
+              </button>
+            ))}
+          </div>
+          <div className="text-[10px] font-mono text-slate-700 px-1">
+            {network === 'Stellar' ? 'Horizon Testnet · XLM/USDC · ~5s finality' : 'Ripple Altnet · XRP · ~4s finality'}
+          </div>
+        </div>
+
         {/* ── Asset Type ── */}
         <div className="space-y-2">
           <label htmlFor="asset" className="block text-[10px] font-bold tracking-widest uppercase text-slate-500">
-            Asset Type
+            Asset
           </label>
-          <select
-            id="asset"
-            value={asset}
-            onChange={e => setAsset(e.target.value)}
-            disabled={loading}
-            className="
-              styled-select w-full bg-[#111827]/60 border border-white/8 rounded-xl
-              px-4 py-3.5 appearance-none text-white font-mono font-semibold text-sm
-              outline-none cursor-pointer transition-all duration-200
-              focus:border-[#6366f1]/60 disabled:opacity-50
-            "
-          >
-            <option value="USDC">USDC</option>
-            <option value="USDT">USDT</option>
-            <option value="BTC">BTC</option>
-            <option value="ETH">ETH</option>
-            <option value="EURC">EURC</option>
-          </select>
+          <div className="flex gap-2">
+            {['USDC', 'USDT'].map(a => (
+              <button
+                key={a}
+                type="button"
+                disabled={loading}
+                onClick={() => setAsset(a)}
+                className="flex-1 py-3 rounded-xl font-bold text-sm tracking-wide border transition-all duration-200 disabled:opacity-50"
+                style={{
+                  background:   asset === a ? 'rgba(16,185,129,0.12)' : 'rgba(255,255,255,0.03)',
+                  borderColor:  asset === a ? 'rgba(16,185,129,0.4)'  : 'rgba(255,255,255,0.08)',
+                  color:        asset === a ? '#34d399'               : '#475569',
+                  boxShadow:    asset === a ? '0 0 16px rgba(16,185,129,0.15)' : 'none',
+                }}
+              >
+                {a}
+              </button>
+            ))}
+          </div>
         </div>
 
         {/* ── Wallet Type ── */}
@@ -313,6 +371,48 @@ export default function ComplianceForm({ onResult, onLoadingChange }) {
               <span>EU MiCA / TFR rules apply — cryptographic proof required above €1,000</span>
             </div>
           )}
+        </div>
+
+        {/* ── Sender Address ── */}
+        <div className="space-y-2">
+          <label htmlFor="senderAddress" className="block text-[10px] font-bold tracking-widest uppercase text-slate-500">
+            Sender Address
+          </label>
+          <input
+            id="senderAddress"
+            type="text"
+            value={senderAddress}
+            onChange={e => setSenderAddress(e.target.value)}
+            disabled={loading}
+            className="
+              w-full bg-[#111827]/60 border border-white/8 rounded-xl
+              px-4 py-3 text-white font-mono text-xs
+              outline-none transition-all duration-200
+              focus:border-[#6366f1]/60 focus:bg-[#6366f1]/5
+              disabled:opacity-50
+            "
+          />
+        </div>
+
+        {/* ── Receiver Address ── */}
+        <div className="space-y-2">
+          <label htmlFor="receiverAddress" className="block text-[10px] font-bold tracking-widest uppercase text-slate-500">
+            Receiver Address
+          </label>
+          <input
+            id="receiverAddress"
+            type="text"
+            value={receiverAddress}
+            onChange={e => setReceiverAddress(e.target.value)}
+            disabled={loading}
+            className="
+              w-full bg-[#111827]/60 border border-white/8 rounded-xl
+              px-4 py-3 text-white font-mono text-xs
+              outline-none transition-all duration-200
+              focus:border-[#6366f1]/60 focus:bg-[#6366f1]/5
+              disabled:opacity-50
+            "
+          />
         </div>
 
         {/* ── Amount ── */}

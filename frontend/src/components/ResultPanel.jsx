@@ -11,7 +11,7 @@ function detectRule(reason) {
 }
 
 export default function ResultPanel({ result, flashKey, isLoading }) {
-  const isApprove = result?.status === 'APPROVE'
+  const isApprove = result?.status?.toUpperCase() === 'APPROVE'
   const rule      = result ? detectRule(result.reason) : null
 
   // Controls the CSS fade-in transition on each new result
@@ -126,6 +126,18 @@ export default function ResultPanel({ result, flashKey, isLoading }) {
           {result.reason}
         </p>
       </div>
+
+      {/* Authorization Hash (if approved) */}
+      {isApprove && result.authorization_hash && (
+        <div className="mb-5">
+          <div className="text-[10px] font-bold uppercase tracking-widest text-slate-600 mb-2">
+            Clearance Signature (SHA-256)
+          </div>
+          <div className="font-mono text-[11px] text-emerald-400/80 bg-emerald-400/5 p-3 rounded-xl border border-emerald-400/10 break-all select-all">
+            {result.authorization_hash}
+          </div>
+        </div>
+      )}
 
       {/* Meta strip */}
       <div className="grid grid-cols-3 gap-3">

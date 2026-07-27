@@ -6,11 +6,12 @@ Production-grade upgrades (v1.1):
   - X-Process-Time response header for performance observability
   - Structured error envelope: { error, code, detail, docs_url }
 """
+import os
 import time
 from contextlib import asynccontextmanager
 from pathlib import Path
 
-from fastapi import Depends, FastAPI, Query, Request
+from fastapi import BackgroundTasks, Depends, FastAPI, Query, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, JSONResponse
@@ -21,9 +22,18 @@ from sqlalchemy.orm import Session
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
 import compliance_engine
-from database import Base, async_engine, engine, get_async_db, get_db
+from database import Base, async_engine, engine, get_async_db, get_db, AsyncSessionLocal
 from db_models import TransactionLog
 from models import ComplianceRequest, ComplianceResponse
+from stellar_client import execute_stellar_transfer
+from xrpl_client import execute_xrpl_transfer
+
+# Blockchain wallet config — loaded from environment variables.
+# Set these in Render dashboard (never commit real secrets to git).
+# Fallback to testnet demo values for local development.
+SENDER_SECRET    = os.environ.get("STELLAR_SENDER_SECRET", "SCENO33654ZLTKIKOST6P6GVQNEKGFMLYBVJQX4CLTUBM5QM6BK6URGR")
+XRPL_SENDER_SEED   = os.environ.get("XRPL_SENDER_SEED",   "sEdSZHxNrgDqzymji6CQyp1cnJFBeaA")
+XRPL_RECEIVER_ADDR = os.environ.get("XRPL_RECEIVER_ADDR", "rEGcPEhZbvFMr14wBhm3TUc1EanWWMU367")
 
 STATIC_DIR = Path(__file__).parent / "static"
 
@@ -167,6 +177,32 @@ async def generic_exception_handler(request: Request, exc: Exception):
 
 
 # ---------------------------------------------------------------------------
+# Background Tasks
+# ---------------------------------------------------------------------------
+async def _execute_and_update_db(
+    log_id: int,
+    network: str,
+    sender_secret: str,
+    receiver_pub: str,
+    amount: float,
+):
+    """Background task: execute tx on the chosen chain and update the DB with the real hash."""
+    if network == "XRPL":
+        ledger_hash = await execute_xrpl_transfer(sender_secret, receiver_pub, amount)
+    else:
+        ledger_hash = await execute_stellar_transfer(sender_secret, receiver_pub, amount)
+
+    async with AsyncSessionLocal() as session:
+        log_entry = await session.get(TransactionLog, log_id)
+        if log_entry:
+            if ledger_hash:
+                log_entry.authorization_hash = ledger_hash
+            else:
+                log_entry.status = "Block"
+                log_entry.reason = f"{network} Live Execution Failed"
+            await session.commit()
+
+# ---------------------------------------------------------------------------
 # Routes
 # ---------------------------------------------------------------------------
 @app.get("/", tags=["Dashboard"], include_in_schema=False)
@@ -190,6 +226,7 @@ async def health_check():
 )
 async def compliance_check(
     payload: ComplianceRequest,
+    background_tasks: BackgroundTasks,
     db: AsyncSession = Depends(get_async_db),
 ) -> ComplianceResponse:
     """
@@ -201,20 +238,46 @@ async def compliance_check(
     - **EU MiCA / TFR**: unhosted wallets receiving > 1,000 require cryptographic proof.
     """
     # Pure in-memory rule evaluation — O(1), no I/O
-    result: ComplianceResponse = compliance_engine.evaluate(payload)
+    result: ComplianceResponse = await compliance_engine.evaluate(payload)
 
     # Non-blocking async SQLite write
     log_entry = TransactionLog(
         amount=payload.amount,
-        wallet_type=payload.wallet_type,
-        sender_kyc_complete=payload.sender_kyc_complete,
-        wallet_cryptographically_verified=payload.wallet_cryptographically_verified,
+        stablecoin_type=payload.stablecoin_type,
+        sender_address=payload.sender_address,
+        receiver_address=payload.receiver_address,
+        sender_jurisdiction=payload.sender_jurisdiction,
+        receiver_jurisdiction=payload.receiver_jurisdiction,
         status=result.status,
         reason=result.reason,
+        policy_evaluated="MAS/MiCA Ruleset",
+        authorization_hash=result.authorization_hash,
+        network=payload.network,
     )
     db.add(log_entry)
     await db.commit()
-    # No refresh needed — we don't return the ORM object, so skip the extra SELECT
+    await db.refresh(log_entry)
+    log_id = log_entry.id
+
+    # If the firewall clears the transaction, dispatch it to execute silently
+    # in the background so the UI doesn't have to wait for blockchain consensus!
+    if result.status == "Approve":
+        # Route to the correct chain based on the network field
+        if payload.network == "XRPL":
+            bg_sender_seed = XRPL_SENDER_SEED
+            bg_receiver   = XRPL_RECEIVER_ADDR  # Always use our funded XRPL receiver for testnet
+        else:
+            bg_sender_seed = SENDER_SECRET
+            bg_receiver   = payload.receiver_address
+
+        background_tasks.add_task(
+            _execute_and_update_db,
+            log_id,
+            payload.network,
+            bg_sender_seed,
+            bg_receiver,
+            payload.amount,
+        )
 
     return result
 
@@ -249,11 +312,15 @@ async def compliance_history(
             {
                 "id": r.id,
                 "amount": r.amount,
-                "wallet_type": r.wallet_type,
-                "sender_kyc_complete": r.sender_kyc_complete,
-                "wallet_cryptographically_verified": r.wallet_cryptographically_verified,
+                "stablecoin_type": r.stablecoin_type,
+                "sender_address": r.sender_address,
+                "receiver_address": r.receiver_address,
+                "sender_jurisdiction": r.sender_jurisdiction,
+                "receiver_jurisdiction": r.receiver_jurisdiction,
                 "status": r.status,
                 "reason": r.reason,
+                "authorization_hash": r.authorization_hash,
+                "network": r.network,
                 "checked_at": r.checked_at.isoformat(),
             }
             for r in records

@@ -14,12 +14,22 @@ class TransactionLog(Base):
     __tablename__ = "transaction_log"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    
+    # Transaction Details
     amount: Mapped[float] = mapped_column(Float, nullable=False)
-    wallet_type: Mapped[str] = mapped_column(String(16), nullable=False)
-    sender_kyc_complete: Mapped[bool] = mapped_column(Boolean, nullable=False)
-    wallet_cryptographically_verified: Mapped[bool] = mapped_column(Boolean, nullable=False)
-    status: Mapped[str] = mapped_column(String(8), nullable=False)   # "APPROVE" | "REJECT"
-    reason: Mapped[str] = mapped_column(String(256), nullable=False)
+    stablecoin_type: Mapped[str] = mapped_column(String(16), nullable=False)
+    sender_address: Mapped[str] = mapped_column(String(64), nullable=False)
+    receiver_address: Mapped[str] = mapped_column(String(64), nullable=False)
+    sender_jurisdiction: Mapped[str] = mapped_column(String(8), nullable=False)
+    receiver_jurisdiction: Mapped[str] = mapped_column(String(8), nullable=False)
+    
+    # Evaluation Outcome
+    status: Mapped[str] = mapped_column(String(16), nullable=False)   # "Approve" | "Block" | "Flag"
+    reason: Mapped[str] = mapped_column(String(512), nullable=False)
+    policy_evaluated: Mapped[str] = mapped_column(String(256), nullable=False)
+    authorization_hash: Mapped[str] = mapped_column(String(128), nullable=True)
+    network: Mapped[str] = mapped_column(String(16), nullable=True)   # "Stellar" | "XRPL"
+
     checked_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
         default=lambda: datetime.now(timezone.utc),
