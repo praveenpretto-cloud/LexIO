@@ -45,7 +45,7 @@ export default function App() {
   const isApprove = result?.status?.toUpperCase() === 'APPROVE'
 
   const TABS = [
-    { key: 'policy', label: 'Policy Engine', icon: '⚖',  sublabel: 'MAS / MiCA rules' },
+    { key: 'policy', label: 'Policy Engine', icon: '⚖',  sublabel: 'MAS / MiCA / GENIUS' },
     { key: 'agent',  label: 'Agent Demo',    icon: '🤖', sublabel: 'SCDD / CDD / EDD' },
     { key: 'studio', label: 'Policy Studio', icon: '🛠️', sublabel: 'No-Code Builder' },
   ]
