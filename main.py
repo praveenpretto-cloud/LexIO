@@ -1,15 +1,26 @@
 """
-main.py — FastAPI application entry point for the LexIO compliance engine.
-Production-grade upgrades (v1.1):
-  - Async compliance_check endpoint (aiosqlite) for sub-20ms concurrent throughput
-  - Global exception handlers: malformed JSON → 400, validation → 422, generic → 500
-  - X-Process-Time response header for performance observability
-  - Structured error envelope: { error, code, detail, docs_url }
+main.py — FastAPI application entry point for the LexIO Agentic Compliance Engine.
+v2.0 additions:
+  - Agentic compliance check endpoint (SCDD/CDD/EDD risk-tier scoring)
+  - W3C Verifiable Credential issuance on APPROVE decisions
+  - XRPL memo anchoring for tamper-evident credential storage
+  - Full demo endpoint: /api/v1/demo/agent-payment
+Preserved from v1.1:
+  - Async SQLite audit logging via aiosqlite
+  - Global exception handlers (400 / 422 / 500 structured envelopes)
+  - X-Process-Time performance observability header
 """
+import json
 import os
 import time
+import uuid
 from contextlib import asynccontextmanager
+from datetime import datetime, timezone
 from pathlib import Path
+
+# Load .env variables first — must happen before any module that reads os.environ
+from dotenv import load_dotenv
+load_dotenv()
 
 from fastapi import BackgroundTasks, Depends, FastAPI, Query, Request
 from fastapi.exceptions import RequestValidationError
@@ -22,18 +33,31 @@ from sqlalchemy.orm import Session
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
 import compliance_engine
-from database import Base, async_engine, engine, get_async_db, get_db, AsyncSessionLocal
-from db_models import TransactionLog
-from models import ComplianceRequest, ComplianceResponse
+from compliance_engine import check_agentic_finance_compliance
+from credentials import anchor_credential_on_xrpl, issue_wallet_credential
+from database import AsyncSessionLocal, Base, async_engine, engine, get_async_db, get_db
+from db_models import AgentTransactionLog, CredentialLog, TransactionLog
+from models import (
+    AgentTransferRequest,
+    ComplianceDecision,
+    ComplianceRequest,
+    ComplianceResponse,
+    RiskTier,
+)
 from stellar_client import execute_stellar_transfer
 from xrpl_client import execute_xrpl_transfer
+from xrpl_escrow import create_compliance_escrow
+from ai_agent import generate_compliance_reasoning
 
 # Blockchain wallet config — loaded from environment variables.
 # Set these in Render dashboard (never commit real secrets to git).
 # Fallback to testnet demo values for local development.
-SENDER_SECRET    = os.environ.get("STELLAR_SENDER_SECRET", "SCENO33654ZLTKIKOST6P6GVQNEKGFMLYBVJQX4CLTUBM5QM6BK6URGR")
+SENDER_SECRET      = os.environ.get("STELLAR_SENDER_SECRET", "SCENO33654ZLTKIKOST6P6GVQNEKGFMLYBVJQX4CLTUBM5QM6BK6URGR")
 XRPL_SENDER_SEED   = os.environ.get("XRPL_SENDER_SEED",   "sEdSZHxNrgDqzymji6CQyp1cnJFBeaA")
 XRPL_RECEIVER_ADDR = os.environ.get("XRPL_RECEIVER_ADDR", "rEGcPEhZbvFMr14wBhm3TUc1EanWWMU367")
+# XRPL issuer account for credential anchoring — defaults to the existing testnet sender
+XRPL_ISSUER_ACCOUNT = os.environ.get("XRPL_ISSUER_ACCOUNT", "rapGvMNARmA46HRNoGBiTy1nEwiKdVTfPw")
+XRPL_ISSUER_SECRET  = os.environ.get("XRPL_ISSUER_SECRET",  os.environ.get("XRPL_SENDER_SEED", "sEdSZHxNrgDqzymji6CQyp1cnJFBeaA"))
 
 STATIC_DIR = Path(__file__).parent / "static"
 
@@ -322,6 +346,201 @@ async def compliance_history(
                 "authorization_hash": r.authorization_hash,
                 "network": r.network,
                 "checked_at": r.checked_at.isoformat(),
+            }
+            for r in records
+        ],
+    }
+
+
+# ---------------------------------------------------------------------------
+# Agentic Finance Compliance Endpoints
+# ---------------------------------------------------------------------------
+
+@app.post(
+    "/api/v1/agent/compliance-check",
+    response_model=ComplianceDecision,
+    tags=["Agentic Compliance"],
+    summary="Run a risk-tier compliance check on an agent-to-agent payment",
+    response_description="APPROVE / REJECT / WATCH with risk tier and reasons.",
+)
+async def agent_compliance_check(request: AgentTransferRequest) -> ComplianceDecision:
+    """
+    Evaluate source and destination wallets against FATF jurisdiction risk,
+    PEP lists, sanctions lists, and linked-wallet inheritance rules.
+
+    Returns one of:
+    - **APPROVE** (SCDD or CDD tier) — payment may proceed.
+    - **REJECT** (EDD tier) — PEP/sanctions hit or inherited risk.
+    - **WATCH** (EDD tier) — high-risk jurisdiction; flag for human review.
+    """
+    decision: ComplianceDecision = await check_agentic_finance_compliance(request)
+
+    # Async audit log write
+    async with AsyncSessionLocal() as session:
+        log = AgentTransactionLog(
+            source_wallet=request.source_wallet_address,
+            destination_wallet=request.destination_wallet_address,
+            amount_usd=request.amount_usd,
+            decision=decision.decision,
+            risk_tier=decision.risk_tier.value,
+            reasons_json=json.dumps(decision.reasons),
+            confidence_score=decision.confidence_score,
+            flagged_by_json=json.dumps(decision.flagged_by),
+        )
+        session.add(log)
+        await session.commit()
+
+    return decision
+
+
+@app.post(
+    "/api/v1/demo/agent-payment",
+    tags=["Agentic Compliance"],
+    summary="Full agent-to-agent payment demo flow",
+    response_description="Compliance decision, issued VC, and XRPL anchor result.",
+)
+async def demo_agent_payment(
+    source_wallet: str,
+    destination_wallet: str,
+    amount: float = 100.0,
+    use_zk: bool = False,
+):
+    """
+    Simulated end-to-end agent-to-agent payment flow for demonstration.
+
+    Executes:
+    1. Compliance check (risk-tier evaluation)
+    2. W3C Verifiable Credential issuance (if APPROVE)
+    3. XRPL memo anchoring (if APPROVE)
+
+    Returns the full pipeline result including timestamps for each stage.
+    """
+    request = AgentTransferRequest(
+        source_wallet_address=source_wallet,
+        destination_wallet_address=destination_wallet,
+        amount_usd=amount,
+    )
+    decision: ComplianceDecision = await agent_compliance_check(request)
+    now = datetime.now(timezone.utc)
+
+    # ── AI Agent Reasoning ───────────────────────────────────────────────────
+    # Look up jurisdiction for both wallets from the mock DB for better AI context
+    import compliance_engine as _ce
+    src_meta = _ce.MOCK_WALLET_OWNERSHIP.get(source_wallet, {"jurisdiction": "UNKNOWN"})
+    dst_meta = _ce.MOCK_WALLET_OWNERSHIP.get(destination_wallet, {"jurisdiction": "UNKNOWN"})
+
+    ai_reasoning = await generate_compliance_reasoning(
+        source_wallet=source_wallet,
+        dest_wallet=destination_wallet,
+        src_jurisdiction=src_meta.get("jurisdiction", "UNKNOWN"),
+        dst_jurisdiction=dst_meta.get("jurisdiction", "UNKNOWN"),
+        amount_usd=amount,
+        risk_tier=decision.risk_tier.value,
+        decision=decision.decision,
+        flagged_by=decision.flagged_by,
+        reasons=decision.reasons,
+    )
+    # Attach the AI reasoning to the decision object
+    decision = decision.model_copy(update={"ai_reasoning": ai_reasoning})
+
+    if decision.decision == "APPROVE":
+        credential = await issue_wallet_credential(
+            wallet_address=destination_wallet,
+            risk_tier=decision.risk_tier.value,
+            timestamp=now,
+            use_zk=use_zk,
+        )
+        anchor_result = await anchor_credential_on_xrpl(
+            credential=credential,
+            xrpl_account=XRPL_ISSUER_ACCOUNT,
+            xrpl_secret=XRPL_ISSUER_SECRET,
+        )
+        return {
+            "payment_id":          str(uuid.uuid4()),
+            "source_wallet":       source_wallet,
+            "destination_wallet":  destination_wallet,
+            "compliance_decision": decision.model_dump(mode="json"),
+            "credential":          credential.to_dict(),
+            "anchor_result":       anchor_result,
+            "payment_status":      "APPROVED",
+            "timestamp":           now.isoformat(),
+        }
+    elif decision.decision == "WATCH":
+        # Submit a REAL EscrowCreate transaction to the XRPL Testnet
+        reason_text = decision.reasons[0] if decision.reasons else "EDD required."
+        escrow_result = await create_compliance_escrow(
+            sender_secret=XRPL_ISSUER_SECRET,
+            sender_account=XRPL_ISSUER_ACCOUNT,
+            destination=destination_wallet if destination_wallet.startswith("r") else None,
+            amount_usd=amount,
+            reason=reason_text,
+        )
+        return {
+            "payment_id":          str(uuid.uuid4()),
+            "source_wallet":       source_wallet,
+            "destination_wallet":  destination_wallet,
+            "compliance_decision": decision.model_dump(mode="json"),
+            "credential":          None,
+            "anchor_result":       escrow_result,
+            "payment_status":      "ESCROW_LOCKED",
+            "timestamp":           now.isoformat(),
+        }
+    else:
+        return {
+            "payment_id":          str(uuid.uuid4()),
+            "source_wallet":       source_wallet,
+            "destination_wallet":  destination_wallet,
+            "compliance_decision": decision.model_dump(mode="json"),
+            "credential":          None,
+            "anchor_result":       None,
+            "payment_status":      decision.decision,
+            "timestamp":           now.isoformat(),
+        }
+
+
+@app.get(
+    "/api/v1/agent/history",
+    tags=["Agentic Compliance"],
+    summary="Retrieve the agentic compliance audit log",
+)
+async def agent_compliance_history(
+    limit:  int = Query(default=50, ge=1, le=500, description="Max records to return"),
+    offset: int = Query(default=0,  ge=0,          description="Pagination offset"),
+):
+    """Returns paginated agentic compliance check history, ordered by most recent first."""
+    from sqlalchemy import func as sa_func
+    from db_models import AgentTransactionLog as ATL
+
+    async with AsyncSessionLocal() as session:
+        count_q = await session.execute(
+            select(sa_func.count()).select_from(ATL)
+        )
+        total = count_q.scalar_one()
+
+        records_q = await session.execute(
+            select(ATL)
+            .order_by(ATL.checked_at.desc())
+            .offset(offset)
+            .limit(limit)
+        )
+        records = records_q.scalars().all()
+
+    return {
+        "total":   total,
+        "offset":  offset,
+        "limit":   limit,
+        "records": [
+            {
+                "id":                  r.id,
+                "source_wallet":       r.source_wallet,
+                "destination_wallet":  r.destination_wallet,
+                "amount_usd":          r.amount_usd,
+                "decision":            r.decision,
+                "risk_tier":           r.risk_tier,
+                "reasons":             json.loads(r.reasons_json or "[]"),
+                "confidence_score":    r.confidence_score,
+                "flagged_by":          json.loads(r.flagged_by_json or "[]"),
+                "checked_at":          r.checked_at.isoformat(),
             }
             for r in records
         ],

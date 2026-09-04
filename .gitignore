@@ -1,9 +1,4 @@
-# Environments
-.env
-.env.*
-!.env.example
-
-# Python
+# Python artifacts
 __pycache__/
 *.py[cod]
 *$py.class
@@ -32,14 +27,20 @@ ENV/
 env.bak/
 venv.bak/
 
-# Database
+# Secrets — NEVER commit
+.env
+.env.*
+!.env.example
+
+# Database — rebuilt at runtime
 *.db
 *.sqlite3
+compliance_log.db
 
 # Node / Frontend
 node_modules/
-dist/
-build/
+frontend/dist/
+frontend/build/
 .npm
 npm-debug.log*
 yarn-debug.log*
@@ -58,5 +59,10 @@ Thumbs.db
 *.swp
 *.swo
 
-# Project specific
+# Test / Coverage artifacts
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Project specific — not needed in cloud
 data/

@@ -27,6 +27,11 @@ class ComplianceRequest(BaseModel):
         default="Stellar",
         description="The blockchain network to execute the transfer on.",
     )
+
+    institution_type: Optional[str] = Field(
+        default=None,
+        description="The type of institution initiating the request (e.g. MPI, CASP, LPSI).",
+    )
     
     sender_jurisdiction: str = Field(
         ...,
@@ -91,3 +96,36 @@ class ComplianceResponse(BaseModel):
         None, description="Cryptographic hash of the transaction if Approved."
     )
 
+
+# ---------------------------------------------------------------------------
+# Agentic Finance Compliance Models
+# ---------------------------------------------------------------------------
+from enum import Enum
+from datetime import datetime
+from typing import List
+
+
+class RiskTier(str, Enum):
+    """Risk classification tier for agent-to-agent payments."""
+    SCDD = "scdd"  # Simplified Customer Due Diligence — clean pair
+    CDD  = "cdd"   # Customer Due Diligence — medium-risk, monitored
+    EDD  = "edd"   # Enhanced Due Diligence — high-risk, requires human review
+
+
+class AgentTransferRequest(BaseModel):
+    """Payload for POST /api/v1/agent/compliance-check."""
+    source_wallet_address:      str   = Field(..., description="Blockchain address of the sending agent.")
+    destination_wallet_address: str   = Field(..., description="Blockchain address of the receiving agent.")
+    amount_usd:                 float = Field(default=0.0, description="Transfer amount in USD (for logging; not a decision factor).")
+    metadata:                   dict  = Field(default_factory=dict, description="Optional additional context.")
+
+
+class ComplianceDecision(BaseModel):
+    """Decision returned by the agentic compliance engine."""
+    decision:         Literal["APPROVE", "REJECT", "WATCH"]
+    risk_tier:        RiskTier
+    reasons:          List[str]
+    confidence_score: float = Field(..., ge=0.0, le=1.0, description="Confidence level of the decision (0.0–1.0).")
+    flagged_by:       List[str] = Field(default_factory=list, description="List of rule identifiers that triggered flags.")
+    timestamp:        datetime
+    ai_reasoning:     Optional[str] = Field(None, description="AI-generated compliance narrative from the LexIO compliance agent.")

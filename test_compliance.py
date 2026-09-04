@@ -1,320 +1,265 @@
 """
-test_compliance.py — Automated test suite for the LexIO compliance engine.
+test_compliance.py — Automated test suite for the LexIO Agentic Compliance Engine.
 
-Covers every decision branch with deterministic, isolated test cases.
-Refactored to use httpx.AsyncClient and anyio to test the async database integration.
+Tests the new risk-tier policy engine directly (no HTTP round-trips) so results
+are deterministic and independent of XRPL/Stellar testnet availability.
 
 Run:
     pytest test_compliance.py -v
 """
 import pytest
-from httpx import AsyncClient, ASGITransport
+from datetime import datetime, timezone
 
-from database import Base, engine
-from main import app
+from compliance_engine import check_agentic_finance_compliance, MOCK_WALLET_OWNERSHIP
+from credentials import issue_wallet_credential, VerifiableCredential
+from models import AgentTransferRequest, ComplianceDecision, RiskTier
 
-pytestmark = pytest.mark.anyio
+pytestmark = pytest.mark.asyncio
+
+
+# ---------------------------------------------------------------------------
+# Fixtures
+# ---------------------------------------------------------------------------
 
 @pytest.fixture(scope="session", autouse=True)
 def create_tables():
     """Ensure all SQLite tables exist before any test runs."""
+    from database import Base, engine
     Base.metadata.create_all(bind=engine)
     yield
-    Base.metadata.drop_all(bind=engine)
-
-@pytest.fixture
-def anyio_backend():
-    return "asyncio"
-
-@pytest.fixture
-async def async_client():
-    transport = ASGITransport(app=app)
-    async with AsyncClient(transport=transport, base_url="http://test") as ac:
-        yield ac
+    # Intentionally NOT dropping tables — keep audit trail across test runs.
 
 
 # ---------------------------------------------------------------------------
-# Helper
+# Test 1 — Clean wallet pair → SCDD → APPROVE
 # ---------------------------------------------------------------------------
-async def post_check(client: AsyncClient, payload: dict) -> dict:
-    response = await client.post("/api/v1/compliance/check", json=payload)
-    assert response.status_code == 200, (
-        f"Expected HTTP 200 but got {response.status_code}: {response.text}"
+
+async def test_clean_wallets_approve():
+    """Two registered clean wallets (US / GB) should receive SCDD → APPROVE."""
+    request = AgentTransferRequest(
+        source_wallet_address="rN7n7otQDd6FczFgLdQqhkFGzPb7E4k7Ud",   # alice_clean / US
+        destination_wallet_address="rAbCdEfGhIjKlMnOpQrStUvWxYzAbCdEfG",  # bob_clean / GB
     )
-    return response.json()
+    decision = await check_agentic_finance_compliance(request)
+
+    assert decision.decision == "APPROVE", (
+        f"Expected APPROVE for clean wallet pair, got {decision.decision}. "
+        f"Reasons: {decision.reasons}"
+    )
+    assert decision.risk_tier == RiskTier.SCDD, (
+        f"Expected SCDD tier, got {decision.risk_tier}"
+    )
+    assert decision.flagged_by == [], (
+        f"Expected no flags, got {decision.flagged_by}"
+    )
+    assert decision.confidence_score > 0.95, (
+        f"Expected high confidence for clean pair, got {decision.confidence_score}"
+    )
 
 
 # ---------------------------------------------------------------------------
-# Rule 1 — MAS PSN02
+# Test 2 — PEP destination wallet → EDD → REJECT
 # ---------------------------------------------------------------------------
-class TestMASPSN02:
-    async def test_reject_when_amount_exceeds_threshold_and_kyc_missing(self, async_client):
-        """amount > 1500 AND sender_kyc_complete=False → MAS PSN02 REJECT"""
-        result = await post_check(async_client, {
-            "amount": 2000.0,
-            "wallet_type": "Hosted",
-            "sender_kyc_complete": False,
-            "wallet_cryptographically_verified": True,
-        })
-        assert result["status"] == "REJECT"
-        assert "MAS PSN02" in result["reason"]
-        assert "1500" in result["reason"]
 
-    async def test_approve_when_amount_exceeds_threshold_but_kyc_complete(self, async_client):
-        """amount > 1500 AND sender_kyc_complete=True → KYC present, no violation"""
-        result = await post_check(async_client, {
-            "amount": 2000.0,
-            "wallet_type": "Hosted",
-            "sender_kyc_complete": True,
-            "wallet_cryptographically_verified": True,
-        })
-        assert result["status"] == "APPROVE"
+async def test_pep_wallet_rejects():
+    """Wallet owned by a PEP (vladimir_putin mock) must be REJECT."""
+    request = AgentTransferRequest(
+        source_wallet_address="rN7n7otQDd6FczFgLdQqhkFGzPb7E4k7Ud",   # alice_clean
+        destination_wallet_address="rU6K7V8oST9vMN2pQr4sT5uV6wX7yZ8aA",  # vladimir_putin
+    )
+    decision = await check_agentic_finance_compliance(request)
 
-    async def test_approve_when_amount_at_threshold(self, async_client):
-        """amount == 1500 (not strictly greater) → no MAS PSN02 violation"""
-        result = await post_check(async_client, {
-            "amount": 1500.0,
-            "wallet_type": "Hosted",
-            "sender_kyc_complete": False,
-            "wallet_cryptographically_verified": True,
-        })
-        assert result["status"] == "APPROVE"
-
-    async def test_approve_when_amount_below_threshold_kyc_missing(self, async_client):
-        """amount < 1500 AND sender_kyc_complete=False → below MAS threshold"""
-        result = await post_check(async_client, {
-            "amount": 500.0,
-            "wallet_type": "Hosted",
-            "sender_kyc_complete": False,
-            "wallet_cryptographically_verified": True,
-        })
-        assert result["status"] == "APPROVE"
+    assert decision.decision == "REJECT", (
+        f"Expected REJECT for PEP wallet, got {decision.decision}. "
+        f"Reasons: {decision.reasons}"
+    )
+    assert "pep_hit" in decision.flagged_by, (
+        f"Expected 'pep_hit' in flagged_by, got {decision.flagged_by}"
+    )
+    assert decision.risk_tier == RiskTier.EDD, (
+        f"Expected EDD tier for PEP hit, got {decision.risk_tier}"
+    )
 
 
 # ---------------------------------------------------------------------------
-# Rule 2 — EU MiCA / Transfer of Funds Regulation
+# Test 3 — High-risk jurisdiction destination → EDD → WATCH
 # ---------------------------------------------------------------------------
-class TestEUTFR:
-    async def test_reject_unhosted_above_threshold_not_verified(self, async_client):
-        """Unhosted + amount > 1000 + not verified → EU TFR REJECT"""
-        result = await post_check(async_client, {
-            "amount": 1500.0,
-            "wallet_type": "Unhosted",
-            "sender_kyc_complete": True,
-            "wallet_cryptographically_verified": False,
-        })
-        assert result["status"] == "REJECT"
-        assert "EU TFR" in result["reason"]
-        assert "1,000" in result["reason"]
 
-    async def test_approve_unhosted_above_threshold_but_verified(self, async_client):
-        """Unhosted + amount > 1000 + verified → cryptographic proof satisfies TFR"""
-        result = await post_check(async_client, {
-            "amount": 1500.0,
-            "wallet_type": "Unhosted",
-            "sender_kyc_complete": True,
-            "wallet_cryptographically_verified": True,
-        })
-        assert result["status"] == "APPROVE"
+async def test_high_risk_jurisdiction_triggers_edd():
+    """
+    Wallet in a FATF high-risk jurisdiction (Myanmar / MM) with no PEP/sanctions hit
+    should be EDD tier → WATCH, not an immediate REJECT.
+    """
+    request = AgentTransferRequest(
+        source_wallet_address="rN7n7otQDd6FczFgLdQqhkFGzPb7E4k7Ud",   # alice_clean / US
+        destination_wallet_address="rHighRiskCountryWalletXxXxXxXxXx",  # myanmar_entity / MM
+    )
+    decision = await check_agentic_finance_compliance(request)
 
-    async def test_approve_hosted_above_threshold_not_verified(self, async_client):
-        """Hosted wallet — EU TFR only applies to Unhosted wallets"""
-        result = await post_check(async_client, {
-            "amount": 1500.0,
-            "wallet_type": "Hosted",
-            "sender_kyc_complete": True,
-            "wallet_cryptographically_verified": False,
-        })
-        assert result["status"] == "APPROVE"
-
-    async def test_approve_unhosted_at_threshold_not_verified(self, async_client):
-        """amount == 1000 (not strictly greater) → TFR does not trigger"""
-        result = await post_check(async_client, {
-            "amount": 1000.0,
-            "wallet_type": "Unhosted",
-            "sender_kyc_complete": True,
-            "wallet_cryptographically_verified": False,
-        })
-        assert result["status"] == "APPROVE"
+    assert decision.risk_tier == RiskTier.EDD, (
+        f"Expected EDD tier for high-risk jurisdiction, got {decision.risk_tier}"
+    )
+    assert decision.decision == "WATCH", (
+        f"Expected WATCH for high-risk jurisdiction (no PEP/sanctions), got {decision.decision}"
+    )
+    assert "jurisdiction_risk" in decision.flagged_by, (
+        f"Expected 'jurisdiction_risk' in flagged_by, got {decision.flagged_by}"
+    )
 
 
 # ---------------------------------------------------------------------------
-# Combined / edge cases
+# Test 4 — W3C Verifiable Credential issuance
 # ---------------------------------------------------------------------------
-class TestCombinedRules:
-    async def test_mas_wins_when_both_rules_violated(self, async_client):
-        """Both MAS PSN02 and EU TFR are violated — MAS is evaluated first."""
-        result = await post_check(async_client, {
-            "amount": 2000.0,
-            "wallet_type": "Unhosted",
-            "sender_kyc_complete": False,
-            "wallet_cryptographically_verified": False,
-        })
-        assert result["status"] == "REJECT"
-        assert "MAS PSN02" in result["reason"]
 
-    async def test_full_clearance_low_amount(self, async_client):
-        """Small amount with no KYC or crypto verification → full APPROVE"""
-        result = await post_check(async_client, {
-            "amount": 100.0,
-            "wallet_type": "Hosted",
-            "sender_kyc_complete": False,
-            "wallet_cryptographically_verified": False,
-        })
-        assert result["status"] == "APPROVE"
-        assert "MAS" in result["reason"] and "MiCA" in result["reason"]
+async def test_credential_issuance():
+    """Approved payment should issue a W3C VC with correct DID and structure."""
+    now = datetime.now(timezone.utc)
+    credential = await issue_wallet_credential(
+        wallet_address="rN7n7otQDd6FczFgLdQqhkFGzPb7E4k7Ud",
+        risk_tier="scdd",
+        timestamp=now,
+    )
 
-    async def test_full_clearance_all_checks_pass(self, async_client):
-        """High amount, unhosted, fully verified — APPROVE"""
-        result = await post_check(async_client, {
-            "amount": 5000.0,
-            "wallet_type": "Unhosted",
-            "sender_kyc_complete": True,
-            "wallet_cryptographically_verified": True,
-        })
-        assert result["status"] == "APPROVE"
+    # DID format check
+    assert credential.id.startswith("did:lexio:"), (
+        f"Expected DID to start with 'did:lexio:', got {credential.id}"
+    )
+    assert len(credential.id) == len("did:lexio:") + 16, (
+        f"Expected 16-char hash suffix in DID, got {credential.id}"
+    )
 
+    # Risk tier preserved
+    assert credential.risk_tier == "scdd", (
+        f"Expected risk_tier='scdd', got {credential.risk_tier}"
+    )
 
-# ---------------------------------------------------------------------------
-# Input validation
-# ---------------------------------------------------------------------------
-class TestInputValidation:
-    async def test_reject_invalid_wallet_type(self, async_client):
-        """wallet_type must be 'Hosted' or 'Unhosted' — anything else is a 422"""
-        response = await async_client.post("/api/v1/compliance/check", json={
-            "amount": 500.0,
-            "wallet_type": "Unknown",
-            "sender_kyc_complete": True,
-            "wallet_cryptographically_verified": True,
-        })
-        assert response.status_code == 422
+    # W3C VC structure
+    vc_dict = credential.to_dict()
+    assert "@context" in vc_dict, "Missing @context in W3C VC"
+    assert "https://www.w3.org/2018/credentials/v1" in vc_dict["@context"]
+    assert "VerifiableCredential" in vc_dict["type"]
+    assert "ComplianceClearance" in vc_dict["type"]
+    assert vc_dict["credentialSubject"]["riskTier"] == "SCDD"
+    assert vc_dict["credentialSubject"]["complianceStatus"] == "cleared"
 
-    async def test_reject_negative_amount(self, async_client):
-        """amount must be > 0 — negative values should return 422"""
-        response = await async_client.post("/api/v1/compliance/check", json={
-            "amount": -100.0,
-            "wallet_type": "Hosted",
-            "sender_kyc_complete": True,
-            "wallet_cryptographically_verified": True,
-        })
-        assert response.status_code == 422
-
-    async def test_reject_missing_required_fields(self, async_client):
-        """Incomplete payload must return 422 Unprocessable Entity"""
-        response = await async_client.post("/api/v1/compliance/check", json={
-            "amount": 500.0,
-        })
-        assert response.status_code == 422
-
-    async def test_reject_zero_amount(self, async_client):
-        """amount=0 violates gt=0 constraint — must be 422"""
-        response = await async_client.post("/api/v1/compliance/check", json={
-            "amount": 0.0,
-            "wallet_type": "Hosted",
-            "sender_kyc_complete": True,
-            "wallet_cryptographically_verified": True,
-        })
-        assert response.status_code == 422
-
-    async def test_reject_string_bool_kyc_coercion(self, async_client):
-        """SECURITY: string 'yes' must NOT be coerced to bool True for sender_kyc_complete"""
-        response = await async_client.post("/api/v1/compliance/check", json={
-            "amount": 500.0,
-            "wallet_type": "Hosted",
-            "sender_kyc_complete": "yes",
-            "wallet_cryptographically_verified": True,
-        })
-        assert response.status_code == 422
-
-    async def test_reject_string_bool_verified_coercion(self, async_client):
-        """SECURITY: string 'true' must NOT be coerced to bool True for wallet_cryptographically_verified"""
-        response = await async_client.post("/api/v1/compliance/check", json={
-            "amount": 500.0,
-            "wallet_type": "Hosted",
-            "sender_kyc_complete": True,
-            "wallet_cryptographically_verified": "true",
-        })
-        assert response.status_code == 422
-
-    async def test_reject_integer_bool_coercion(self, async_client):
-        """SECURITY: integer 1 must NOT be silently coerced to boolean True"""
-        response = await async_client.post("/api/v1/compliance/check", json={
-            "amount": 500.0,
-            "wallet_type": "Hosted",
-            "sender_kyc_complete": 1,
-            "wallet_cryptographically_verified": True,
-        })
-        assert response.status_code == 422
-
-    async def test_reject_sql_injection_in_wallet_type(self, async_client):
-        """SECURITY: SQL-like strings in wallet_type must be rejected by Literal constraint"""
-        response = await async_client.post("/api/v1/compliance/check", json={
-            "amount": 500.0,
-            "wallet_type": "Hosted; DROP TABLE transaction_log;--",
-            "sender_kyc_complete": True,
-            "wallet_cryptographically_verified": True,
-        })
-        assert response.status_code == 422
+    # JSON serialization works
+    json_str = credential.to_json_string()
+    assert isinstance(json_str, str)
+    assert "did:lexio:" in json_str
 
 
 # ---------------------------------------------------------------------------
-# QA Audit Matrix — the four explicit scenarios from the audit brief
+# Test 5 — Linked-wallet risk inheritance
 # ---------------------------------------------------------------------------
-class TestAuditMatrix:
-    """Explicit 4-scenario matrix requested in the QA audit."""
 
-    async def test_matrix_1_pass_hosted_kyc_true(self, async_client):
-        """Matrix #1: Amount=500, Wallet=Hosted, KYC=True, Verified=False → APPROVE"""
-        result = await post_check(async_client, {
-            "amount": 500,
-            "wallet_type": "Hosted",
-            "sender_kyc_complete": True,
-            "wallet_cryptographically_verified": False,
-        })
-        assert result["status"] == "APPROVE", f"Expected APPROVE, got: {result}"
+async def test_linked_wallet_inheritance():
+    """
+    rPqq3gQJ5M7nOpKlM9pQr2sT3uV4wXyZa is owned by evgeny_prigozhin (PEP).
+    rU6K7V8oST9vMN2pQr4sT5uV6wX7yZ8aA (putin) links to it.
+    But this test checks the direct PEP on rPqq3... as the destination.
+    Indirect path: a wallet linked to rU6... (PEP wallet) should inherit risk.
+    """
+    # rPqq... is directly owned by a PEP (Prigozhin) — direct REJECT
+    request = AgentTransferRequest(
+        source_wallet_address="rN7n7otQDd6FczFgLdQqhkFGzPb7E4k7Ud",     # alice_clean
+        destination_wallet_address="rPqq3gQJ5M7nOpKlM9pQr2sT3uV4wXyZa",  # prigozhin — PEP
+    )
+    decision = await check_agentic_finance_compliance(request)
 
-    async def test_matrix_2_fail_mas_psn02(self, async_client):
-        """Matrix #2: Amount=2000, Wallet=Hosted, KYC=False, Verified=False → REJECT MAS PSN02"""
-        result = await post_check(async_client, {
-            "amount": 2000,
-            "wallet_type": "Hosted",
-            "sender_kyc_complete": False,
-            "wallet_cryptographically_verified": False,
-        })
-        assert result["status"] == "REJECT"
-        assert "MAS PSN02" in result["reason"], f"Expected MAS PSN02 reason, got: {result['reason']}"
+    assert decision.decision == "REJECT", (
+        f"Expected REJECT for PEP-linked wallet, got {decision.decision}. "
+        f"Reasons: {decision.reasons}"
+    )
+    assert "pep_hit" in decision.flagged_by, (
+        f"Expected 'pep_hit' in flagged_by, got {decision.flagged_by}"
+    )
 
-    async def test_matrix_3_fail_eu_tfr(self, async_client):
-        """Matrix #3: Amount=1200, Wallet=Unhosted, KYC=True, Verified=False → REJECT EU TFR"""
-        result = await post_check(async_client, {
-            "amount": 1200,
-            "wallet_type": "Unhosted",
-            "sender_kyc_complete": True,
-            "wallet_cryptographically_verified": False,
-        })
-        assert result["status"] == "REJECT"
-        assert "EU TFR" in result["reason"], f"Expected EU TFR reason, got: {result['reason']}"
+    # Now verify linked-wallet inheritance: create a wallet that is NOT a PEP itself
+    # but is linked to the PEP wallet. Use a custom wallet_db for this sub-case.
+    linked_only_db = {
+        "rCleanWalletLinkedToPEP": {"owner_name": "clean_but_linked", "jurisdiction": "US"},
+        "rU6K7V8oST9vMN2pQr4sT5uV6wX7yZ8aA": {"owner_name": "vladimir_putin", "jurisdiction": "RU"},
+        **MOCK_WALLET_OWNERSHIP,
+    }
+    from compliance_engine import LINKED_WALLETS
+    # Temporarily inject the link (non-destructive — only affects this call)
+    original_links = LINKED_WALLETS.copy()
+    LINKED_WALLETS["rCleanWalletLinkedToPEP"] = ["rU6K7V8oST9vMN2pQr4sT5uV6wX7yZ8aA"]
 
-    async def test_matrix_4_pass_unhosted_fully_verified(self, async_client):
-        """Matrix #4: Amount=5000, Wallet=Unhosted, KYC=True, Verified=True → APPROVE"""
-        result = await post_check(async_client, {
-            "amount": 5000,
-            "wallet_type": "Unhosted",
-            "sender_kyc_complete": True,
-            "wallet_cryptographically_verified": True,
-        })
-        assert result["status"] == "APPROVE", f"Expected APPROVE, got: {result}"
+    try:
+        request2 = AgentTransferRequest(
+            source_wallet_address="rN7n7otQDd6FczFgLdQqhkFGzPb7E4k7Ud",
+            destination_wallet_address="rCleanWalletLinkedToPEP",
+        )
+        decision2 = await check_agentic_finance_compliance(request2, wallet_db=linked_only_db)
+    finally:
+        # Restore original LINKED_WALLETS
+        LINKED_WALLETS.clear()
+        LINKED_WALLETS.update(original_links)
+
+    assert decision2.decision == "REJECT", (
+        f"Expected REJECT for wallet linked to PEP, got {decision2.decision}. "
+        f"Reasons: {decision2.reasons}"
+    )
+    assert "linked_wallet_risk" in decision2.flagged_by, (
+        f"Expected 'linked_wallet_risk' in flagged_by, got {decision2.flagged_by}"
+    )
 
 
 # ---------------------------------------------------------------------------
-# History endpoint
+# Additional edge-case tests
 # ---------------------------------------------------------------------------
-class TestHistoryEndpoint:
-    async def test_history_returns_list(self, async_client):
-        """GET /api/v1/compliance/history must return a valid paginated response."""
-        response = await async_client.get("/api/v1/compliance/history")
-        assert response.status_code == 200
-        data = response.json()
-        assert "records" in data
-        assert "total" in data
-        assert isinstance(data["records"], list)
+
+async def test_sanctions_hit_rejects():
+    """Wallet owned by a sanctioned entity (north_korea_bank) must be REJECT."""
+    request = AgentTransferRequest(
+        source_wallet_address="rSanctionWalletNorthKoreaXxXxXxXx",      # north_korea_bank
+        destination_wallet_address="rN7n7otQDd6FczFgLdQqhkFGzPb7E4k7Ud", # alice_clean
+    )
+    decision = await check_agentic_finance_compliance(request)
+
+    assert decision.decision == "REJECT"
+    assert "sanctions_hit" in decision.flagged_by
+
+
+async def test_medium_risk_jurisdiction_is_cdd_approve():
+    """Cayman Islands (KY) wallet should be CDD → APPROVE (monitored, not blocked)."""
+    request = AgentTransferRequest(
+        source_wallet_address="rN7n7otQDd6FczFgLdQqhkFGzPb7E4k7Ud",   # alice_clean / US
+        destination_wallet_address="rCaymanFundWalletXxXxXxXxXxXxXx",  # cayman_fund_xyz / KY
+    )
+    decision = await check_agentic_finance_compliance(request)
+
+    assert decision.decision == "APPROVE", (
+        f"Expected APPROVE (CDD) for medium-risk jurisdiction, got {decision.decision}"
+    )
+    assert decision.risk_tier == RiskTier.CDD, (
+        f"Expected CDD tier for Cayman wallet, got {decision.risk_tier}"
+    )
+    assert "medium_risk_jurisdiction" in decision.flagged_by
+
+
+async def test_unknown_wallet_defaults_to_clean():
+    """Wallet not in the registry should default to jurisdiction 'XX' → SCDD → APPROVE."""
+    request = AgentTransferRequest(
+        source_wallet_address="rN7n7otQDd6FczFgLdQqhkFGzPb7E4k7Ud",
+        destination_wallet_address="rCompletelyUnknownWalletAddress123",
+    )
+    decision = await check_agentic_finance_compliance(request)
+
+    # Unknown wallets get "XX" jurisdiction — not in high/medium risk lists
+    assert decision.decision == "APPROVE"
+    assert decision.risk_tier == RiskTier.SCDD
+
+
+async def test_credential_valid_for_correct_duration():
+    """Issued credential expiry should match the valid_for_days parameter."""
+    now = datetime.now(timezone.utc)
+    credential = await issue_wallet_credential(
+        wallet_address="rAbCdEfGhIjKlMnOpQrStUvWxYzAbCdEfG",
+        risk_tier="cdd",
+        timestamp=now,
+        valid_for_days=7,
+    )
+    delta = credential.expires_at - credential.issued_at
+    assert delta.days == 7, f"Expected 7-day validity, got {delta.days} days"

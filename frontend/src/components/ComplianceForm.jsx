@@ -72,6 +72,7 @@ export default function ComplianceForm({ onResult, onLoadingChange }) {
       stablecoin_type: asset,
       sender_jurisdiction: origin,
       receiver_jurisdiction: destination,
+      institution_type: institution,
       wallet_type: walletType,
       sender_kyc_complete: kyc,
       wallet_cryptographically_verified: ownership,
@@ -103,8 +104,8 @@ export default function ComplianceForm({ onResult, onLoadingChange }) {
       const enrichedResponse = {
         decision: data.status?.toUpperCase() === 'APPROVE' ? 'approved' : 'rejected',
         risk: data.status?.toUpperCase() === 'APPROVE' ? 'low' : 'high',
-        policy_packs: ['MAS Pack v0.9.2', 'MiCA Pack v1.0.1'],
-        rules_triggered: ['MAS-PSN02', 'MiCA-14', 'EU-TFR'],
+        policy_packs: ['MAS Pack v0.9.2', 'MiCA Pack v1.0.1', 'GENIUS Act Pack v1.0'],
+        rules_triggered: ['MAS-PSN02', 'MiCA-14', 'US-GENIUS'],
         obligations: data.status?.toUpperCase() === 'APPROVE'
           ? ['Travel Rule Required', 'Record Retention']
           : [],
@@ -250,11 +251,13 @@ export default function ComplianceForm({ onResult, onLoadingChange }) {
               focus:border-[#6366f1]/60 disabled:opacity-50
             "
           >
-            <option value="MPI">Major Payment Institution (MAS)</option>
-            <option value="VASP">VASP</option>
-            <option value="EMI">EMI</option>
-            <option value="BANK">Bank</option>
-            <option value="CUSTODIAN">Custodian</option>
+                  <option value="MPI">MPI (Major Payment Institution - MAS)</option>
+                  <option value="CASP">CASP (Crypto-Asset Service Provider - MiCA)</option>
+                  <option value="LPSI">LPSI (Licensed Stablecoin Issuer - GENIUS)</option>
+                  <option value="VASP">VASP (Virtual Asset Service Provider)</option>
+                  <option value="EMI">EMI (Electronic Money Institution)</option>
+                  <option value="BANK">Bank</option>
+                  <option value="CUSTODIAN">Custodian</option>
           </select>
         </div>
 

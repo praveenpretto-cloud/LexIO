@@ -2,11 +2,18 @@ FROM python:3.11-slim
 
 WORKDIR /app
 
+# Install dependencies first (cached layer)
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-COPY . .
+# Copy only source code — never .venv, .env, *.db, __pycache__
+COPY compliance_engine.py credentials.py database.py db_models.py ./
+COPY main.py models.py stellar_client.py web3_client.py xrpl_client.py ./
+COPY static/ ./static/
 
-EXPOSE 8000
+# Create data directory for SQLite
+RUN mkdir -p /app/data
 
-CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]
+EXPOSE 8080
+
+CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8080"]
