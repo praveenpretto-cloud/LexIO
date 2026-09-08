@@ -1,67 +1,67 @@
-# LexIO — Agentic Compliance Engine
+# LexIO — Agentic Compliance Execution Protocol
 
-LexIO is a production-grade, AI-driven compliance oracle designed to instantly evaluate cross-border cryptocurrency transfers against major international regulatory frameworks. Built for the **Ripple Swell Hackathon**, LexIO demonstrates how institutions can safely adopt public blockchains like the XRPL without compromising regulatory requirements or broadcasting sensitive compliance data in the clear.
+LexIO is an **active execution protocol** that bridges the gap between AI compliance and on-chain settlement. 
 
-## 🌟 The "Pro Max" Agentic Pipeline
+While competitors build passive dashboard software for compliance officers to manually review alerts, LexIO is **developer infrastructure**. Our Agentic Swarm automatically evaluates transactions, mints cryptographic W3C Verifiable Credentials as proof of compliance, and natively routes and escrows funds across 8 major blockchains in a single API call.
+
+## 🌟 The "Active Execution" Pipeline
 
 LexIO goes far beyond basic rule-checking by orchestrating a robust, defensible pipeline:
 
-1. **Live AI Agentic Logic (Gemini 2.0 Flash)**
-   Instead of basic `if/else` statements, LexIO utilizes a live Gemini 2.0 Flash agent interpreting FATF, MiCA, and US GENIUS Act regulations in real-time. It generates institutional-grade compliance narratives that explain *exactly why* a transaction was flagged and *what regulation applies*.
+1. **Live Agent Swarm (Gemini 2.0 Flash)**
+   Instead of basic `if/else` statements, LexIO utilizes a live LLM agent swarm interpreting FATF, MiCA, and US GENIUS Act regulations in real-time. It validates identities, cross-references sanctions, and generates institutional-grade compliance narratives.
 
-2. **Real ZK-Privacy (Hash Commitments)**
-   Financial institutions cannot broadcast sensitive compliance data (risk tiers, PEP status) in the clear. LexIO generates real HMAC-SHA256 Hash Commitments—the exact same cryptographic primitive used in production ZK applications (like Tornado Cash or Semaphore)—to prove compliance without revealing identity.
+2. **W3C Verifiable Credentials**
+   Cleared wallets are issued W3C-standard JSON-LD Verifiable Credentials representing their risk tier (e.g., SCDD, CDD, EDD). This turns an AI decision into a portable cryptographic proof.
 
-3. **Real XRPL Testnet Escrow**
-   LexIO doesn't just read data; the backend actively signs and broadcasts real `EscrowCreate` transactions to the Ripple Testnet. Transactions flagged for "WATCH" status have their funds locked via `finish_after` for a mandatory compliance review window.
+3. **Omni-Chain Routing (8 Networks)**
+   LexIO natively integrates with 8 blockchains (**XRPL, Stellar, Ethereum, Base, Polygon, Arbitrum, Solana, and Aptos**). It automatically anchors credentials on-chain for tamper-evident storage.
 
-4. **Verifiable Credentials (W3C)**
-   Cleared wallets are issued W3C-standard Verifiable Credentials representing their risk tier (e.g., SCDD, CDD, EDD), which can be anchored on-chain.
+4. **Native Smart Escrow**
+   Transactions flagged for High-Risk (EDD / "WATCH" status) are actively intercepted. Instead of just sending an alert, LexIO executes a native API call to the destination blockchain (e.g. XRPL) to create a time-locked **Escrow Vault**. The funds are safely frozen on-chain until a human review occurs.
 
-## 🏛 Supported Regulations
+## 🏛 The Policy Compiler
 
-LexIO's Policy Engine currently supports machine-executable rules derived from:
-
-1. **US GENIUS Act**: Automatically blocks unregulated stablecoins (like USDT) for US-based Licensed Payment Stablecoin Issuers (LPSI), requiring regulated assets like USDC.
-2. **MAS PSN02 (Singapore)**: Automatically flags transfers > 1,500 SGD/equivalent missing full originator KYC details.
-3. **EU MiCA / Transfer of Funds Regulation**: Automatically intercepts unhosted wallet transfers > 1,000 EUR/equivalent lacking cryptographic proof.
-4. **FATF Recommendations**: Identifies Politically Exposed Persons (PEPs) and cross-border high-risk jurisdiction transfers, mandating Enhanced Due Diligence (EDD).
+LexIO's Policy Studio allows institutions to define human-readable policies derived from international frameworks, which are instantly compiled into machine-executable directives:
+- **US GENIUS Act**: Automatically blocks unregulated stablecoins (like USDT) for US-based Licensed Payment Stablecoin Issuers (LPSI).
+- **MAS PSN02 (Singapore)**: Automatically flags transfers > 1,500 SGD missing full originator KYC details.
+- **EU MiCA / Transfer of Funds Regulation**: Automatically intercepts unhosted wallet transfers lacking cryptographic proof.
 
 ## 🚀 Tech Stack
 
-- **Backend**: FastAPI (Python 3.11), Uvicorn, Pydantic (Strict Validation)
-- **AI Integration**: Google Gemini 2.0 Flash SDK
-- **Blockchain**: `xrpl-py` (for live Escrow/Anchor), Web3.py, Stellar SDK
+- **Backend**: FastAPI (Python 3.11), Uvicorn, Pydantic
+- **AI Integration**: Google GenAI SDK (Gemini 2.0 Flash)
+- **Blockchain Adapters**: `xrpl-py`, `stellar-sdk`, `web3.py`, `solana`, `aptos-sdk`
+- **Frontend**: React (Vite), Framer Motion, Tailwind CSS (Glassmorphism UI)
 - **Database**: SQLite via `aiosqlite` (Fully asynchronous I/O)
-- **Frontend**: React (Vite), Tailwind CSS (Premium Dark Mode)
-- **Orchestration**: Docker, Docker Compose, Nginx (Reverse Proxy)
 
-## 🐳 Quick Start (Local Docker Deployment)
+## ⚡ Quick Start
 
-LexIO is fully containerized and cloud-ready for instant deployment to Render or AWS.
+LexIO is designed as a REST API backend with a beautifully animated visual demo dashboard.
 
-1. **Clone the repository**
-   ```bash
-   git clone https://github.com/praveenpretto-cloud/LexIO.git
-   cd LexIO
-   ```
+### 1. Setup Environment
+```bash
+git clone https://github.com/praveenpretto-cloud/LexIO.git
+cd LexIO
+cp .env.example .env
+```
+*Add your `GEMINI_API_KEY` to `.env` to enable the Agent Swarm. Private keys for blockchain testnets are optional; the system gracefully falls back to simulated hashes if keys are omitted.*
 
-2. **Configure Environment Variables**
-   ```bash
-   cp .env.example .env
-   ```
-   *Make sure to add your `GEMINI_API_KEY` for live AI narratives and a `TESTNET_PRIVATE_KEY` with Sepolia ETH if testing Web3 anchors.*
+### 2. Start the Backend (FastAPI)
+```bash
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+uvicorn main:app --reload --host 0.0.0.0 --port 8000
+```
 
-3. **Start the containers**
-   ```bash
-   docker compose up --build -d
-   ```
+### 3. Start the Frontend (React + Vite)
+```bash
+cd frontend
+npm install
+npm run dev
+```
 
-4. **Access the Application**
-   - **Agent Demo & Policy Dashboard (UI)**: [http://localhost](http://localhost)
-   - **Enterprise OpenAPI Portal**: [http://localhost:8000/docs](http://localhost:8000/docs)
-
-## 🔐 Security & Persistence
-- **Zero Secrets in Git**: Sensitive keys (`.env`) are strictly ignored.
-- **State Persistence**: The local SQLite database is mounted to `./data` on the host, ensuring your audit logs persist across container restarts.
-- **Lean Cloud Builds**: Optimized Dockerfiles and hardened `.gitignore` ensure ultra-fast, lightweight deployments.
+### 4. Access the Platform
+- **The "One-Click Magic" Demo UI**: [http://localhost:5173](http://localhost:5173)
+- **Stripe-like Developer API Docs**: [http://localhost:8000/docs](http://localhost:8000/docs)
