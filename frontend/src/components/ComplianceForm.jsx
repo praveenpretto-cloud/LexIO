@@ -12,10 +12,50 @@ export default function ComplianceForm({ onResult, onLoadingChange }) {
     Stellar: {
       sender:   'GDHR3WJVS3IM5U7DFC3CBFMXPVLXA254MCLJRSJVHUR5BTHA2XJ7YHOZ',
       receiver: 'GB3ST5WM4RBIOTBHS4GUUFH6VN5FEMVFZKAMVXRLL4D55DVQVKG7X66E',
+      label:    '✦ Stellar',
+      sublabel: 'Horizon Testnet · XLM · ~5s finality',
     },
     XRPL: {
       sender:   'rapGvMNARmA46HRNoGBiTy1nEwiKdVTfPw',
       receiver: 'rEGcPEhZbvFMr14wBhm3TUc1EanWWMU367',
+      label:    '◈ XRPL',
+      sublabel: 'Ripple Altnet · XRP · ~4s finality',
+    },
+    Ethereum: {
+      sender:   '0x742d35Cc6634C0532925a3b844Bc9e7595f2bD18',
+      receiver: '0x53d284357EC70cE289D6D64134DfAc8E511c8a3D',
+      label:    '⟠ Ethereum',
+      sublabel: 'Sepolia · ETH · ~12s finality',
+    },
+    Solana: {
+      sender:   '7xKXtg2CW87d97TXJSDpbD5jBkheTqA83TZRuJosgAsU',
+      receiver: 'DRpbCBMxVnDK7maPM5tGv6MvB3v1sRMC86PZ8okm21hy',
+      label:    '◎ Solana',
+      sublabel: 'Devnet · SOL · ~400ms finality',
+    },
+    Base: {
+      sender:   '0x742d35Cc6634C0532925a3b844Bc9e7595f2bD18',
+      receiver: '0x53d284357EC70cE289D6D64134DfAc8E511c8a3D',
+      label:    '🔵 Base',
+      sublabel: 'Sepolia · ETH · ~2s finality',
+    },
+    Polygon: {
+      sender:   '0x742d35Cc6634C0532925a3b844Bc9e7595f2bD18',
+      receiver: '0x53d284357EC70cE289D6D64134DfAc8E511c8a3D',
+      label:    '⬡ Polygon',
+      sublabel: 'Amoy · POL · ~2s finality',
+    },
+    Arbitrum: {
+      sender:   '0x742d35Cc6634C0532925a3b844Bc9e7595f2bD18',
+      receiver: '0x53d284357EC70cE289D6D64134DfAc8E511c8a3D',
+      label:    '🔷 Arbitrum',
+      sublabel: 'Sepolia · ETH · ~250ms finality',
+    },
+    Aptos: {
+      sender:   '0x1a2b3c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d9e0f1a2b',
+      receiver: '0xa1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1d2e3f4a5b6c7d8e9f0a1b2',
+      label:    '🅰 Aptos',
+      sublabel: 'Devnet · APT · ~1s finality',
     },
   }
 
@@ -199,6 +239,7 @@ export default function ComplianceForm({ onResult, onLoadingChange }) {
               focus:border-[#6366f1]/60 disabled:opacity-50
             "
           >
+            <option value="EU">European Union</option>
             <option value="SG">Singapore</option>
             <option value="US">United States</option>
             <option value="GB">United Kingdom</option>
@@ -290,8 +331,8 @@ export default function ComplianceForm({ onResult, onLoadingChange }) {
           <label className="block text-[10px] font-bold tracking-widest uppercase text-slate-500">
             Blockchain Network
           </label>
-          <div className="flex gap-2">
-            {['Stellar', 'XRPL'].map(net => (
+          <div className="grid grid-cols-4 gap-1.5">
+            {Object.keys(DEFAULTS).map(net => (
               <button
                 key={net}
                 type="button"
@@ -301,7 +342,7 @@ export default function ComplianceForm({ onResult, onLoadingChange }) {
                   setSenderAddress(DEFAULTS[net].sender)
                   setReceiverAddress(DEFAULTS[net].receiver)
                 }}
-                className="flex-1 py-3 rounded-xl font-bold text-sm tracking-wide border transition-all duration-200 disabled:opacity-50"
+                className="py-2.5 px-2 rounded-xl font-bold text-[11px] tracking-wide border transition-all duration-200 disabled:opacity-50 text-center"
                 style={{
                   background:   network === net ? 'rgba(99,102,241,0.15)' : 'rgba(255,255,255,0.03)',
                   borderColor:  network === net ? 'rgba(99,102,241,0.5)'  : 'rgba(255,255,255,0.08)',
@@ -309,12 +350,12 @@ export default function ComplianceForm({ onResult, onLoadingChange }) {
                   boxShadow:    network === net ? '0 0 16px rgba(99,102,241,0.2)' : 'none',
                 }}
               >
-                {net === 'Stellar' ? '✦ Stellar' : '◈ XRPL'}
+                {DEFAULTS[net].label}
               </button>
             ))}
           </div>
           <div className="text-[10px] font-mono text-slate-700 px-1">
-            {network === 'Stellar' ? 'Horizon Testnet · XLM/USDC · ~5s finality' : 'Ripple Altnet · XRP · ~4s finality'}
+            {DEFAULTS[network]?.sublabel || ''}
           </div>
         </div>
 

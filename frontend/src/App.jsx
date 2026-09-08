@@ -1,10 +1,12 @@
 import { useState } from 'react'
+import { motion } from 'framer-motion'
 import Header           from './components/Header'
 import ComplianceForm   from './components/ComplianceForm'
 import ResultPanel      from './components/ResultPanel'
 import SessionHistory   from './components/SessionHistory'
 import AgentPaymentDemo from './components/AgentPaymentDemo'
 import PolicyStudio     from './components/PolicyStudio'
+import EcosystemPulse   from './components/EcosystemPulse'
 
 export default function App() {
   const [result,       setResult]       = useState(null)
@@ -52,44 +54,47 @@ export default function App() {
 
   return (
     <div className="relative min-h-screen flex flex-col">
-      <div className="bg-grid" />
-      <div className="bg-scanlines" />
+      <div className="bg-glow-mesh" />
+      <EcosystemPulse />
+      <div className="bg-grid opacity-50" />
+      <div className="bg-scanlines opacity-50" />
 
       <Header checkCount={checkCount} />
 
-      {/* ── Tab Bar ── */}
-      <div className="relative z-10 border-b border-white/5 bg-[#090d18]/60 backdrop-blur-sm">
-        <div className="max-w-7xl mx-auto px-6 flex gap-1 pt-2">
-          {TABS.map(tab => (
-            <button
-              key={tab.key}
-              id={`tab-${tab.key}`}
-              onClick={() => setActiveTab(tab.key)}
-              className="flex items-center gap-2 px-5 py-2.5 rounded-t-xl font-semibold text-sm transition-all duration-200"
-              style={{
-                background:   activeTab === tab.key ? 'rgba(99,102,241,0.12)' : 'transparent',
-                color:        activeTab === tab.key ? '#a5b4fc' : '#475569',
-                borderTop:    activeTab === tab.key ? '1px solid rgba(99,102,241,0.3)' : '1px solid transparent',
-                borderLeft:   activeTab === tab.key ? '1px solid rgba(99,102,241,0.15)' : '1px solid transparent',
-                borderRight:  activeTab === tab.key ? '1px solid rgba(99,102,241,0.15)' : '1px solid transparent',
-                borderBottom: activeTab === tab.key ? '1px solid rgba(13,18,32,0.8)' : '1px solid transparent',
-                marginBottom: activeTab === tab.key ? '-1px' : '0',
-              }}
-            >
-              <span>{tab.icon}</span>
-              <span>{tab.label}</span>
-              <span
-                className="hidden sm:block text-[10px] font-mono px-2 py-0.5 rounded-full"
+      {/* ── Floating Dock Tab Bar ── */}
+      <div className="relative z-20 flex justify-center mt-6 mb-2">
+        <div className="glass-panel-glow rounded-full p-1.5 flex gap-1 items-center shadow-2xl">
+          {TABS.map(tab => {
+            const isActive = activeTab === tab.key
+            return (
+              <button
+                key={tab.key}
+                id={`tab-${tab.key}`}
+                onClick={() => setActiveTab(tab.key)}
+                className={`relative flex items-center gap-2 px-6 py-2.5 rounded-full font-semibold text-sm transition-all duration-300 outline-none`}
                 style={{
-                  background: activeTab === tab.key ? 'rgba(99,102,241,0.2)' : 'rgba(255,255,255,0.04)',
-                  color:      activeTab === tab.key ? '#818cf8' : '#374151',
-                  border:     '1px solid rgba(99,102,241,0.12)',
+                  color: isActive ? '#fff' : '#64748b',
                 }}
               >
-                {tab.sublabel}
-              </span>
-            </button>
-          ))}
+                {isActive && (
+                  <motion.div
+                    layoutId="activeTab"
+                    className="absolute inset-0 rounded-full bg-gradient-to-r from-indigo-600/40 to-indigo-400/40 border border-indigo-400/30 shadow-[0_0_15px_rgba(99,102,241,0.3)]"
+                    transition={{ type: 'spring', stiffness: 400, damping: 30 }}
+                  />
+                )}
+                <span className="relative z-10 flex items-center gap-2">
+                  <span className={isActive ? 'text-indigo-400' : 'text-slate-500'}>{tab.icon}</span>
+                  <span className="tracking-wide">{tab.label}</span>
+                </span>
+                {isActive && tab.sublabel && (
+                  <span className="relative z-10 hidden sm:block text-[10px] font-mono px-2 py-0.5 rounded-full bg-black/40 text-indigo-300 border border-indigo-400/20">
+                    {tab.sublabel}
+                  </span>
+                )}
+              </button>
+            )
+          })}
         </div>
       </div>
 
@@ -128,7 +133,7 @@ export default function App() {
                   <span style={{ color: '#818cf8' }}>Policy Engine</span>
                 </h1>
                 <p className="text-sm text-slate-500 mt-1">
-                  Evaluate regulated digital asset transactions using machine-executable policy rules derived from MAS and MiCA frameworks.
+                  Evaluate regulated digital asset transactions using machine-executable policy rules derived from MAS, MiCA, and GENIUS Act frameworks.
                 </p>
                 <p className="text-[11px] font-mono text-slate-700 mt-1.5 tracking-wide">
                   Powered by the{' '}

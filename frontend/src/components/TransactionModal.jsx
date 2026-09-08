@@ -16,10 +16,22 @@ export default function TransactionModal({ transaction, onClose }) {
 
   const isApprove = transaction.status?.toUpperCase() === 'APPROVE'
 
-  const explorerUrl = transaction.authorization_hash
-    ? transaction.network === 'XRPL'
-      ? `https://testnet.xrpl.org/transactions/${transaction.authorization_hash}`
-      : `https://stellar.expert/explorer/testnet/tx/${transaction.authorization_hash}`
+  const CHAIN_META = {
+    xrpl:     { label: '◈ XRPL',     color: '#818cf8', name: 'XRPL Testnet',  explorer: (hash) => `https://testnet.xrpl.org/transactions/${hash}` },
+    stellar:  { label: '✦ Stellar',  color: '#a5b4fc', name: 'Stellar Testnet', explorer: (hash) => `https://stellar.expert/explorer/testnet/tx/${hash}` },
+    ethereum: { label: '⟠ Ethereum', color: '#627eea', name: 'Sepolia Etherscan', explorer: (hash) => `https://sepolia.etherscan.io/tx/${hash}` },
+    solana:   { label: '◎ Solana',   color: '#14f195', name: 'Solana Devnet', explorer: (hash) => `https://explorer.solana.com/tx/${hash}?cluster=devnet` },
+    base:     { label: '🔵 Base',     color: '#0052ff', name: 'Base Sepolia',  explorer: (hash) => `https://sepolia.basescan.org/tx/${hash}` },
+    polygon:  { label: '⬡ Polygon',  color: '#8247e5', name: 'Polygon Amoy',  explorer: (hash) => `https://amoy.polygonscan.com/tx/${hash}` },
+    arbitrum: { label: '🔷 Arbitrum', color: '#28a0f0', name: 'Arbiscan Sepolia', explorer: (hash) => `https://sepolia.arbiscan.io/tx/${hash}` },
+    aptos:    { label: '🅰 Aptos',    color: '#2dd8a7', name: 'Aptos Devnet',  explorer: (hash) => `https://explorer.aptoslabs.com/txn/${hash}?network=devnet` },
+  }
+
+  const networkKey = transaction.network?.toLowerCase() || 'xrpl'
+  const meta = CHAIN_META[networkKey] || CHAIN_META.xrpl
+
+  const explorerUrl = transaction.authorization_hash && !transaction.authorization_hash.startsWith('SIM_')
+    ? meta.explorer(transaction.authorization_hash)
     : null
 
   const handleCopy = () => {
@@ -46,12 +58,12 @@ export default function TransactionModal({ transaction, onClose }) {
               <span
                 className="text-[10px] font-bold px-2 py-0.5 rounded-full border tracking-widest uppercase"
                 style={{
-                  background: transaction.network === 'XRPL' ? 'rgba(251,191,36,0.1)' : 'rgba(99,102,241,0.1)',
-                  borderColor: transaction.network === 'XRPL' ? 'rgba(251,191,36,0.3)' : 'rgba(99,102,241,0.3)',
-                  color: transaction.network === 'XRPL' ? '#fbbf24' : '#a5b4fc',
+                  background: `${meta.color}15`,
+                  borderColor: `${meta.color}30`,
+                  color: meta.color,
                 }}
               >
-                {transaction.network === 'XRPL' ? '◈ XRPL' : '✦ Stellar'}
+                {meta.label}
               </span>
             )}
           </div>
@@ -118,13 +130,13 @@ export default function TransactionModal({ transaction, onClose }) {
                   rel="noopener noreferrer"
                   className="inline-flex items-center gap-2 text-[11px] font-mono font-bold px-4 py-2 rounded-xl border transition-all hover:scale-[1.02]"
                   style={{
-                    background: 'rgba(99,102,241,0.08)',
-                    borderColor: 'rgba(99,102,241,0.25)',
-                    color: '#818cf8',
+                    background: `${meta.color}10`,
+                    borderColor: `${meta.color}30`,
+                    color: meta.color,
                   }}
                 >
                   <span>↗</span>
-                  View on {transaction.network === 'XRPL' ? 'XRPL Testnet Explorer' : 'Stellar Expert Testnet'}
+                  View on {meta.name}
                 </a>
               )}
             </div>

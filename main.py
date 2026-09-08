@@ -48,6 +48,7 @@ from stellar_client import execute_stellar_transfer
 from xrpl_client import execute_xrpl_transfer
 from xrpl_escrow import create_compliance_escrow
 from ai_agent import generate_compliance_reasoning
+from chains import get_chain, list_chains
 
 # Blockchain wallet config — loaded from environment variables.
 # Set these in Render dashboard (never commit real secrets to git).
@@ -203,6 +204,19 @@ async def generic_exception_handler(request: Request, exc: Exception):
 # ---------------------------------------------------------------------------
 # Background Tasks
 # ---------------------------------------------------------------------------
+
+# Map network display names → chain adapter IDs
+_NETWORK_TO_CHAIN_ID = {
+    "Stellar":  "stellar",
+    "XRPL":     "xrpl",
+    "Ethereum": "ethereum",
+    "Solana":   "solana",
+    "Base":     "base",
+    "Polygon":  "polygon",
+    "Arbitrum": "arbitrum",
+    "Aptos":    "aptos",
+}
+
 async def _execute_and_update_db(
     log_id: int,
     network: str,
@@ -211,7 +225,13 @@ async def _execute_and_update_db(
     amount: float,
 ):
     """Background task: execute tx on the chosen chain and update the DB with the real hash."""
-    if network == "XRPL":
+    chain_id = _NETWORK_TO_CHAIN_ID.get(network, network.lower())
+    adapter = get_chain(chain_id)
+
+    if adapter:
+        ledger_hash = await adapter.execute_transfer(sender_secret, receiver_pub, amount)
+    elif network == "XRPL":
+        # Fallback to legacy direct imports
         ledger_hash = await execute_xrpl_transfer(sender_secret, receiver_pub, amount)
     else:
         ledger_hash = await execute_stellar_transfer(sender_secret, receiver_pub, amount)
@@ -238,7 +258,17 @@ def root():
 @app.get("/api/health", tags=["System Health"], summary="Check API health status")
 async def health_check():
     """Returns the operational status of the LexIO API."""
-    return {"status": "ok", "version": "1.0.0"}
+    return {"status": "ok", "version": "2.0.0"}
+
+
+@app.get(
+    "/api/v1/chains",
+    tags=["System Health"],
+    summary="List all supported blockchain networks",
+)
+async def get_supported_chains():
+    """Returns metadata for all registered chain adapters."""
+    return {"chains": list_chains(), "total": len(list_chains())}
 
 
 @app.post(
@@ -397,34 +427,37 @@ async def agent_compliance_check(request: AgentTransferRequest) -> ComplianceDec
     "/api/v1/demo/agent-payment",
     tags=["Agentic Compliance"],
     summary="Full agent-to-agent payment demo flow",
-    response_description="Compliance decision, issued VC, and XRPL anchor result.",
+    response_description="Compliance decision, issued VC, and chain anchor result.",
 )
 async def demo_agent_payment(
     source_wallet: str,
     destination_wallet: str,
     amount: float = 100.0,
     use_zk: bool = False,
+    chain: str = "xrpl",
 ):
     """
-    Simulated end-to-end agent-to-agent payment flow for demonstration.
+    End-to-end agent-to-agent payment flow for demonstration.
 
     Executes:
     1. Compliance check (risk-tier evaluation)
-    2. W3C Verifiable Credential issuance (if APPROVE)
-    3. XRPL memo anchoring (if APPROVE)
+    2. AI compliance narrative (Gemini 2.0 Flash)
+    3. W3C Verifiable Credential issuance (if APPROVE)
+    4. On-chain anchor on the selected chain (if APPROVE)
+    5. On-chain escrow on the selected chain (if WATCH)
 
-    Returns the full pipeline result including timestamps for each stage.
+    Supports all 8 chains: xrpl, stellar, ethereum, solana, base, polygon, arbitrum, aptos.
     """
     request = AgentTransferRequest(
         source_wallet_address=source_wallet,
         destination_wallet_address=destination_wallet,
         amount_usd=amount,
+        chain_id=chain,
     )
     decision: ComplianceDecision = await agent_compliance_check(request)
     now = datetime.now(timezone.utc)
 
     # ── AI Agent Reasoning ───────────────────────────────────────────────────
-    # Look up jurisdiction for both wallets from the mock DB for better AI context
     import compliance_engine as _ce
     src_meta = _ce.MOCK_WALLET_OWNERSHIP.get(source_wallet, {"jurisdiction": "UNKNOWN"})
     dst_meta = _ce.MOCK_WALLET_OWNERSHIP.get(destination_wallet, {"jurisdiction": "UNKNOWN"})
@@ -440,8 +473,10 @@ async def demo_agent_payment(
         flagged_by=decision.flagged_by,
         reasons=decision.reasons,
     )
-    # Attach the AI reasoning to the decision object
     decision = decision.model_copy(update={"ai_reasoning": ai_reasoning})
+
+    # ── Resolve the chain adapter ────────────────────────────────────────────
+    chain_adapter = get_chain(chain.lower())
 
     if decision.decision == "APPROVE":
         credential = await issue_wallet_credential(
@@ -450,11 +485,36 @@ async def demo_agent_payment(
             timestamp=now,
             use_zk=use_zk,
         )
-        anchor_result = await anchor_credential_on_xrpl(
-            credential=credential,
-            xrpl_account=XRPL_ISSUER_ACCOUNT,
-            xrpl_secret=XRPL_ISSUER_SECRET,
-        )
+
+        # Anchor on the selected chain (or fall back to XRPL)
+        if chain_adapter:
+            import hashlib as _hl
+            cred_hash = _hl.sha256(credential.to_json_string().encode()).hexdigest()
+            memo_payload = json.dumps({
+                "credential_id":   credential.id,
+                "credential_hash": cred_hash,
+                "wallet_address":  credential.wallet_address,
+                "risk_tier":       credential.risk_tier,
+                "issued_at":       credential.issued_at.isoformat(),
+                "chain":           chain,
+            }, separators=(",", ":"))
+            anchor_result = await chain_adapter.anchor_memo(
+                account_secret=XRPL_ISSUER_SECRET,
+                account_address=XRPL_ISSUER_ACCOUNT,
+                memo_data=memo_payload,
+            )
+            anchor_result["credential_id"] = credential.id
+            # Add explorer URL
+            if anchor_result.get("transaction_hash") and not anchor_result["transaction_hash"].startswith("SIM_"):
+                anchor_result["explorer_url"] = chain_adapter.get_explorer_url(anchor_result["transaction_hash"])
+        else:
+            # Legacy XRPL-only path
+            anchor_result = await anchor_credential_on_xrpl(
+                credential=credential,
+                xrpl_account=XRPL_ISSUER_ACCOUNT,
+                xrpl_secret=XRPL_ISSUER_SECRET,
+            )
+
         return {
             "payment_id":          str(uuid.uuid4()),
             "source_wallet":       source_wallet,
@@ -463,18 +523,30 @@ async def demo_agent_payment(
             "credential":          credential.to_dict(),
             "anchor_result":       anchor_result,
             "payment_status":      "APPROVED",
+            "chain":               chain,
             "timestamp":           now.isoformat(),
         }
     elif decision.decision == "WATCH":
-        # Submit a REAL EscrowCreate transaction to the XRPL Testnet
         reason_text = decision.reasons[0] if decision.reasons else "EDD required."
-        escrow_result = await create_compliance_escrow(
-            sender_secret=XRPL_ISSUER_SECRET,
-            sender_account=XRPL_ISSUER_ACCOUNT,
-            destination=destination_wallet if destination_wallet.startswith("r") else None,
-            amount_usd=amount,
-            reason=reason_text,
-        )
+
+        if chain_adapter:
+            escrow_result = await chain_adapter.create_escrow(
+                sender_secret=XRPL_ISSUER_SECRET,
+                sender_address=XRPL_ISSUER_ACCOUNT,
+                destination=destination_wallet,
+                amount_usd=amount,
+                reason=reason_text,
+            )
+        else:
+            # Legacy XRPL-only path
+            escrow_result = await create_compliance_escrow(
+                sender_secret=XRPL_ISSUER_SECRET,
+                sender_account=XRPL_ISSUER_ACCOUNT,
+                destination=destination_wallet if destination_wallet.startswith("r") else None,
+                amount_usd=amount,
+                reason=reason_text,
+            )
+
         return {
             "payment_id":          str(uuid.uuid4()),
             "source_wallet":       source_wallet,
@@ -483,6 +555,7 @@ async def demo_agent_payment(
             "credential":          None,
             "anchor_result":       escrow_result,
             "payment_status":      "ESCROW_LOCKED",
+            "chain":               chain,
             "timestamp":           now.isoformat(),
         }
     else:
@@ -494,6 +567,7 @@ async def demo_agent_payment(
             "credential":          None,
             "anchor_result":       None,
             "payment_status":      decision.decision,
+            "chain":               chain,
             "timestamp":           now.isoformat(),
         }
 

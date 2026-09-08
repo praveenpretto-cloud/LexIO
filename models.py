@@ -23,7 +23,9 @@ class ComplianceRequest(BaseModel):
         examples=["USDC"],
     )
 
-    network: Literal["Stellar", "XRPL"] = Field(
+    network: Literal[
+        "Stellar", "XRPL", "Ethereum", "Solana", "Base", "Polygon", "Arbitrum", "Aptos"
+    ] = Field(
         default="Stellar",
         description="The blockchain network to execute the transfer on.",
     )
@@ -117,6 +119,7 @@ class AgentTransferRequest(BaseModel):
     source_wallet_address:      str   = Field(..., description="Blockchain address of the sending agent.")
     destination_wallet_address: str   = Field(..., description="Blockchain address of the receiving agent.")
     amount_usd:                 float = Field(default=0.0, description="Transfer amount in USD (for logging; not a decision factor).")
+    chain_id:                   str   = Field(default="xrpl", description="The blockchain chain ID (e.g. xrpl, solana, base, polygon, arbitrum, aptos, stellar, ethereum).")
     metadata:                   dict  = Field(default_factory=dict, description="Optional additional context.")
 
 

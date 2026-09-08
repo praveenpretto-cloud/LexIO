@@ -108,6 +108,18 @@ MOCK_WALLET_OWNERSHIP: Dict[str, Dict] = {
     # Medium-risk jurisdiction (CDD)
     "rCaymanFundWalletXxXxXxXxXxXxXx":           {"owner_name": "cayman_fund_xyz",         "jurisdiction": "KY"},
     "rBVIWalletMockXxXxXxXxXxXxXxXxXx":          {"owner_name": "bvi_holding_co",          "jurisdiction": "VG"},
+    # ── Solana wallets (base58) ──────────────────────────────────────────────
+    "7xKXtg2CW87d97TXJSDpbD5jBkheTqA83TZRuJosgAsU": {"owner_name": "sol_clean_sender",   "jurisdiction": "US"},
+    "DRpbCBMxVnDK7maPM5tGv6MvB3v1sRMC86PZ8okm21hy": {"owner_name": "sol_clean_receiver",  "jurisdiction": "DE"},
+    "HN7cABqLq46Es1jh92dQQisAq662SmxELLLsHHe4YWrH": {"owner_name": "sol_pep_wallet",      "jurisdiction": "RU"},
+    # ── EVM wallets (0x) — shared across Ethereum, Base, Polygon, Arbitrum ──
+    "0x742d35Cc6634C0532925a3b844Bc9e7595f2bD18":    {"owner_name": "evm_clean_sender",    "jurisdiction": "US"},
+    "0x53d284357EC70cE289D6D64134DfAc8E511c8a3D":    {"owner_name": "evm_clean_receiver",  "jurisdiction": "GB"},
+    "0xAb5801a7D398351b8bE11C439e05C5B3259aeC9B":    {"owner_name": "evm_high_risk",       "jurisdiction": "MM"},
+    "0x1Db3439a222C519ab44bb1144fC28167b4Fa6EE6":    {"owner_name": "evm_cayman_fund",     "jurisdiction": "KY"},
+    # ── Aptos wallets (0x hex) ───────────────────────────────────────────────
+    "0x1a2b3c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d9e0f1a2b": {"owner_name": "aptos_clean_sender",  "jurisdiction": "JP"},
+    "0xa1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1d2e3f4a5b6c7d8e9f0a1b2": {"owner_name": "aptos_clean_receiver", "jurisdiction": "SG"},
 }
 
 # Maps wallet address → list of linked wallet addresses

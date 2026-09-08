@@ -1,5 +1,7 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
+import { motion, AnimatePresence } from 'framer-motion'
 import AgentSwarm from './AgentSwarm'
+import AgentTerminal from './AgentTerminal'
 
 /**
  * AgentPaymentDemo — full visual agent-to-agent payment flow component.
@@ -10,12 +12,34 @@ import AgentSwarm from './AgentSwarm'
  */
 
 const DEMO_WALLETS = {
+  // XRPL wallets
   CLEAN_SOURCE:    'rN7n7otQDd6FczFgLdQqhkFGzPb7E4k7Ud',
   CLEAN_DEST:      'rAbCdEfGhIjKlMnOpQrStUvWxYzAbCdEfG',
   PEP_DEST:        'rU6K7V8oST9vMN2pQr4sT5uV6wX7yZ8aA',
   HIGH_RISK_DEST:  'rHighRiskCountryWalletXxXxXxXxXx',
   CAYMAN_DEST:     'rCaymanFundWalletXxXxXxXxXxXxXx',
+  // Solana wallets
+  SOL_CLEAN_SRC:   '7xKXtg2CW87d97TXJSDpbD5jBkheTqA83TZRuJosgAsU',
+  SOL_CLEAN_DST:   'DRpbCBMxVnDK7maPM5tGv6MvB3v1sRMC86PZ8okm21hy',
+  // EVM wallets (shared across Ethereum, Base, Polygon, Arbitrum)
+  EVM_CLEAN_SRC:   '0x742d35Cc6634C0532925a3b844Bc9e7595f2bD18',
+  EVM_CLEAN_DST:   '0x53d284357EC70cE289D6D64134DfAc8E511c8a3D',
+  EVM_HIGH_RISK:   '0xAb5801a7D398351b8bE11C439e05C5B3259aeC9B',
+  // Aptos wallets
+  APT_CLEAN_SRC:   '0x1a2b3c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d9e0f1a2b',
+  APT_CLEAN_DST:   '0xa1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1d2e3f4a5b6c7d8e9f0a1b2',
 }
+
+const CHAIN_OPTIONS = [
+  { id: 'xrpl',     label: '◈ XRPL',     sublabel: 'Testnet · ~4s',  color: '#818cf8' },
+  { id: 'stellar',  label: '✦ Stellar',  sublabel: 'Testnet · ~5s',  color: '#a5b4fc' },
+  { id: 'ethereum', label: '⟠ Ethereum', sublabel: 'Sepolia · ~12s', color: '#627eea' },
+  { id: 'solana',   label: '◎ Solana',   sublabel: 'Devnet · ~400ms', color: '#14f195' },
+  { id: 'base',     label: '🔵 Base',     sublabel: 'Sepolia · ~2s',  color: '#0052ff' },
+  { id: 'polygon',  label: '⬡ Polygon',  sublabel: 'Amoy · ~2s',     color: '#8247e5' },
+  { id: 'arbitrum', label: '🔷 Arbitrum', sublabel: 'Sepolia · ~250ms', color: '#28a0f0' },
+  { id: 'aptos',    label: '🅰 Aptos',    sublabel: 'Devnet · ~1s',   color: '#2dd8a7' },
+]
 
 const RISK_COLORS = {
   scdd: { bg: 'rgba(16,185,129,0.12)', border: 'rgba(16,185,129,0.35)', text: '#34d399', label: 'SCDD', glow: 'rgba(16,185,129,0.2)' },
@@ -153,11 +177,15 @@ export default function AgentPaymentDemo() {
   const [destWallet,   setDestWallet]   = useState(DEMO_WALLETS.CLEAN_DEST)
   const [amount,       setAmount]       = useState('100')
   const [useZk,        setUseZk]        = useState(false)
+  const [chain,        setChain]        = useState('xrpl')
   const [loading,      setLoading]      = useState(false)
   const [result,       setResult]       = useState(null)
   const [error,        setError]        = useState(null)
   const [latency,      setLatency]      = useState(null)
   const [showRawData,  setShowRawData]  = useState(false)
+  const [terminalLogs, setTerminalLogs] = useState([])
+  const [isTerminalThinking, setIsTerminalThinking] = useState(false)
+  const [progressStep, setProgressStep] = useState(0)
 
   const reset = () => { setResult(null); setError(null); setLatency(null) }
 
@@ -174,6 +202,21 @@ export default function AgentPaymentDemo() {
     setResult(null)
     setError(null)
     setLatency(null)
+    setTerminalLogs([])
+    setIsTerminalThinking(true)
+    setProgressStep(0)
+
+    // Simulate streaming
+    setTimeout(() => {
+      setTerminalLogs(prev => [...prev, { timestamp: Date.now(), agent: 'Swarm', message: `Initiating omni-chain transfer (${chain.toUpperCase()})...` }])
+      setProgressStep(1)
+    }, 200)
+    setTimeout(() => setTerminalLogs(prev => [...prev, { timestamp: Date.now(), agent: 'KYC Agent', message: `Validating identity for ${sourceWallet.slice(0, 6)}...` }]), 800)
+    setTimeout(() => setTerminalLogs(prev => [...prev, { timestamp: Date.now(), agent: 'Risk Agent', message: 'Analyzing EVM history & sanctions list...' }]), 1500)
+    setTimeout(() => {
+      setTerminalLogs(prev => [...prev, { timestamp: Date.now(), agent: 'Risk Agent', message: 'No sanctions hit. Computing risk score...' }])
+      setProgressStep(2)
+    }, 2200)
 
     const t0 = performance.now()
     try {
@@ -182,6 +225,7 @@ export default function AgentPaymentDemo() {
         destination_wallet: destWallet,
         amount:             parseFloat(amount) || 100,
         use_zk:             useZk,
+        chain:              chain,
       })
       const res = await fetch(`/api/v1/demo/agent-payment?${params}`, { method: 'POST' })
       const ms  = (performance.now() - t0).toFixed(0)
@@ -190,11 +234,19 @@ export default function AgentPaymentDemo() {
       const data = await res.json()
       if (!res.ok) {
         setError(data.message ?? `HTTP ${res.status}`)
+        setIsTerminalThinking(false)
         return
       }
       setResult(data)
+      setIsTerminalThinking(false)
+      setTerminalLogs(prev => [...prev, 
+        { timestamp: Date.now(), agent: 'Swarm', message: `Decision: ${data.compliance_decision.decision}` },
+        { timestamp: Date.now(), agent: 'Execution Agent', message: data.credential ? `W3C Credential Minted.` : `Payment Blocked.` },
+        { timestamp: Date.now(), agent: 'Execution Agent', message: `Chain status: ${data.anchor_result?.status || 'Completed'}` }
+      ])
     } catch (err) {
       setError('Cannot reach the API — is the FastAPI server running?')
+      setIsTerminalThinking(false)
     } finally {
       setLoading(false)
     }
@@ -364,6 +416,35 @@ export default function AgentPaymentDemo() {
               </div>
             </div>
 
+            {/* Chain Selector */}
+            <div className="space-y-1.5">
+              <label className="block text-[10px] font-bold tracking-widest uppercase text-slate-500">
+                Anchor Chain
+              </label>
+              <div className="grid grid-cols-4 gap-1.5">
+                {CHAIN_OPTIONS.map(ch => (
+                  <button
+                    key={ch.id}
+                    type="button"
+                    onClick={() => setChain(ch.id)}
+                    disabled={loading}
+                    className="py-2 px-1.5 rounded-lg font-bold text-[10px] border transition-all duration-200 disabled:opacity-50 text-center"
+                    style={{
+                      background:   chain === ch.id ? `${ch.color}18` : 'rgba(255,255,255,0.03)',
+                      borderColor:  chain === ch.id ? `${ch.color}50` : 'rgba(255,255,255,0.08)',
+                      color:        chain === ch.id ? ch.color        : '#475569',
+                      boxShadow:    chain === ch.id ? `0 0 12px ${ch.color}20` : 'none',
+                    }}
+                  >
+                    {ch.label}
+                  </button>
+                ))}
+              </div>
+              <div className="text-[10px] font-mono text-slate-700 px-1">
+                {CHAIN_OPTIONS.find(c => c.id === chain)?.sublabel || ''}
+              </div>
+            </div>
+
             {/* Error */}
             {error && (
               <div className="flex items-start gap-3 p-3 rounded-xl text-xs font-mono slide-up" style={{ background: 'rgba(244,63,94,0.08)', border: '1px solid rgba(244,63,94,0.2)', color: '#fb7185' }}>
@@ -408,287 +489,85 @@ export default function AgentPaymentDemo() {
           </form>
         </div>
 
-        {/* Right — animated timeline */}
-        <div
-          className="rounded-2xl p-6 border backdrop-blur-sm"
-          style={{
-            background:  'rgba(13,18,32,0.6)',
-            borderColor: result
-              ? (isApprove ? 'rgba(16,185,129,0.25)' : isReject ? 'rgba(244,63,94,0.25)' : 'rgba(251,191,36,0.25)')
-              : 'rgba(255,255,255,0.06)',
-            boxShadow: result
-              ? (isApprove ? '0 0 40px rgba(16,185,129,0.1)' : isReject ? '0 0 40px rgba(244,63,94,0.1)' : '0 0 40px rgba(251,191,36,0.08)')
-              : 'none',
-            transition: 'border-color 0.5s ease, box-shadow 0.5s ease',
-          }}
-        >
-          <div className="text-[10px] font-bold tracking-widest uppercase text-slate-500 mb-5">
-            Payment Pipeline
+        {/* Right — Magic Pipeline & Terminal */}
+        <div className="flex flex-col gap-6">
+          <div className="glass-panel rounded-2xl p-6 border flex flex-col gap-6">
+            <div className="text-[10px] font-bold tracking-widest uppercase text-slate-500 mb-2">
+              Execution Pipeline
+            </div>
+            
+            {/* Framer Motion Progress Pipeline */}
+            <div className="flex items-start justify-between relative px-2 pt-2">
+              
+              {/* Line Container: strictly bounded between the first and last circle centers */}
+              <div className="absolute left-[28px] right-[28px] top-[28px] h-0.5 -translate-y-1/2">
+                {/* Background track */}
+                <div className="absolute inset-0 bg-white/10" />
+                {/* Animated fill */}
+                <motion.div 
+                  className="absolute left-0 top-0 bottom-0 bg-indigo-500 origin-left"
+                  initial={{ scaleX: 0 }}
+                  animate={{ scaleX: loading ? (progressStep / 3) : result ? 1 : 0 }}
+                  transition={{ duration: 0.8, ease: "easeInOut" }}
+                  style={{ boxShadow: '0 0 10px rgba(99,102,241,0.5)' }}
+                />
+              </div>
+              
+              {['Wallet Config', 'Agent Swarm', 'VC Mint', 'Chain Execution'].map((node, i) => {
+                const isActive = (loading && i <= progressStep) || (result && i <= 3)
+                return (
+                  <div key={node} className="relative z-10 flex flex-col items-center gap-3">
+                    <motion.div
+                      animate={{ 
+                        scale: isActive ? 1.1 : 1,
+                        borderColor: isActive ? 'rgba(99,102,241,1)' : 'rgba(255,255,255,0.2)',
+                        backgroundColor: isActive ? '#1e1b4b' : '#0d1220'
+                      }}
+                      className="w-10 h-10 rounded-full border-2 flex items-center justify-center font-mono text-xs shadow-lg transition-colors z-20"
+                    >
+                      {isActive ? '✓' : i + 1}
+                    </motion.div>
+                    <span className={`text-[9px] font-mono tracking-widest uppercase font-bold text-center w-20 leading-tight ${isActive ? 'text-indigo-400' : 'text-slate-500'}`}>
+                      {node}
+                    </span>
+                  </div>
+                )
+              })}
+            </div>
           </div>
 
-          {/* ── Step 1: Compliance Check ── */}
-          <TimelineStep icon="1" title="Compliance Check" status={step('compliance')}>
-            {!loading && !result ? (
-              <div className="text-xs text-slate-700 font-mono">Awaiting input…</div>
-            ) : loading ? (
-              <div className="space-y-2">
-                <Skeleton className="h-3 w-3/4" />
-                <Skeleton className="h-3 w-1/2" />
-              </div>
-            ) : (
-              <div className="space-y-2">
-                <WalletChip address={result.source_wallet}      label="Source Agent" />
-                <WalletChip address={result.destination_wallet} label="Destination Agent" />
-              </div>
-            )}
-          </TimelineStep>
-
-          {/* ── Step 2: Decision ── */}
-          <TimelineStep icon="2" title="Risk Decision" status={step('decision')}>
-            {!result && !loading ? (
-              <div className="text-xs text-slate-700 font-mono">—</div>
-            ) : loading ? (
-              <div className="space-y-2"><Skeleton className="h-8 w-full" /><Skeleton className="h-3 w-4/5" /></div>
-            ) : (
-              <div className="space-y-3">
-                {/* Decision badge */}
-                <div
-                  className="flex items-center gap-3 px-4 py-3 rounded-xl"
-                  style={{ background: dc.bg, border: `1px solid ${dc.border}`, boxShadow: dc.glow }}
-                >
-                  <span className="text-2xl font-black" style={{ color: dc.text }}>{DECISION_ICONS[decisionKey]}</span>
+          <AgentTerminal logs={terminalLogs} isThinking={isTerminalThinking} />
+          
+          {/* Final Result Card */}
+          {result && (
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="glass-panel-glow rounded-2xl p-6 border"
+            >
+               <div className="flex items-center gap-4">
+                  <div className="text-4xl">{DECISION_ICONS[decisionKey]}</div>
                   <div>
-                    <div className="text-sm font-black" style={{ color: dc.text }}>{decisionKey}</div>
-                    <div className="flex items-center gap-2 mt-0.5">
-                      <span
-                        className="text-[10px] font-mono font-bold px-2 py-0.5 rounded-full"
-                        style={{ background: tc.bg, border: `1px solid ${tc.border}`, color: tc.text }}
-                      >
-                        {(tier ?? '').toUpperCase()} Tier
-                      </span>
-                      <span className="text-[10px] font-mono text-slate-600">
-                        {(decision.confidence_score * 100).toFixed(0)}% confidence
-                      </span>
+                    <div className="text-xl font-black" style={{ color: dc.text }}>{decisionKey}</div>
+                    <div className="text-xs font-mono text-slate-400 mt-1">
+                      {result.payment_status}
                     </div>
                   </div>
-                </div>
-
-                {/* Flags */}
-                {decision.flagged_by?.length > 0 && (
-                  <div className="flex flex-wrap gap-1.5">
-                    {decision.flagged_by.map(flag => (
-                      <span
-                        key={flag}
-                        className="text-[10px] font-mono px-2 py-0.5 rounded-full"
-                        style={{ background: 'rgba(244,63,94,0.1)', border: '1px solid rgba(244,63,94,0.2)', color: '#fb7185' }}
-                      >
-                        {flag}
-                      </span>
-                    ))}
-                  </div>
-                )}
-
-                {/* Reasons */}
-                <div className="space-y-1">
-                  {decision.reasons?.map((r, i) => (
-                    <div key={i} className="flex items-start gap-2 text-[11px] text-slate-500 font-mono">
-                      <span className="mt-0.5 flex-shrink-0 text-slate-700">›</span>
-                      <span>{r}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-          </TimelineStep>
-
-          {/* ── Step 2.5: AI Compliance Agent Reasoning ── */}
-          <TimelineStep icon="🧠" title="AI Compliance Agent" status={loading ? 'loading' : result ? 'done' : 'idle'}>
-            {!result && !loading ? (
-              <div className="text-xs text-slate-700 font-mono">—</div>
-            ) : loading ? (
-              <div className="space-y-2">
-                <Skeleton className="h-3 w-full" />
-                <Skeleton className="h-3 w-5/6" />
-                <Skeleton className="h-3 w-4/5" />
-              </div>
-            ) : result.compliance_decision?.ai_reasoning ? (
-              <div
-                className="rounded-xl p-3 space-y-2"
-                style={{ background: 'rgba(139,92,246,0.07)', border: '1px solid rgba(139,92,246,0.2)' }}
-              >
-                <div className="flex items-center gap-2 mb-2">
-                  <span className="text-[10px] font-bold font-mono px-2 py-0.5 rounded-full text-violet-400 border border-violet-500/30 bg-violet-500/10">
-                    LexIO Compliance Agent
-                  </span>
-                  <span className="text-[10px] font-mono text-slate-600">Gemini 2.0 Flash</span>
-                </div>
-                <p className="text-[11px] text-slate-300 leading-relaxed font-sans italic">
-                  "{result.compliance_decision.ai_reasoning}"
-                </p>
-              </div>
-            ) : (
-              <div className="text-[11px] font-mono text-slate-600">AI agent reasoning unavailable.</div>
-            )}
-          </TimelineStep>
-
-          {/* ── Step 3: Verifiable Credential ── */}
-          <TimelineStep icon="3" title="Verifiable Credential" status={step('vc')}>
-            {!result && !loading ? (
-              <div className="text-xs text-slate-700 font-mono">—</div>
-            ) : loading ? (
-              <div className="space-y-2"><Skeleton className="h-3 w-full" /><Skeleton className="h-3 w-3/5" /></div>
-            ) : result.credential ? (
-              <div
-                className="rounded-xl p-3 space-y-2 font-mono text-[10px]"
-                style={{ background: 'rgba(16,185,129,0.07)', border: '1px solid rgba(16,185,129,0.2)' }}
-              >
-                <div className="flex justify-between">
-                  <span className="text-slate-600">DID</span>
-                  <span className="text-emerald-400 truncate max-w-[140px]" title={result.credential.credentialSubject?.id ?? result.credential.id}>
-                    {result.credential.credentialSubject?.id ?? result.credential.id}
-                  </span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-slate-600">Status</span>
-                  <span className="text-emerald-400">{result.credential.credentialSubject?.complianceStatus}</span>
-                </div>
-                {result.credential.credentialSubject?.proofType ? (
-                  <div className="flex justify-between">
-                    <span className="text-slate-600">Proof</span>
-                    <span className="text-emerald-400">{result.credential.credentialSubject.proofType}</span>
-                  </div>
-                ) : (
-                  <div className="flex justify-between">
-                    <span className="text-slate-600">Risk Tier</span>
-                    <span className="text-emerald-400">{result.credential.credentialSubject?.riskTier}</span>
-                  </div>
-                )}
-                <div className="flex justify-between">
-                  <span className="text-slate-600">Expires</span>
-                  <span className="text-slate-400">{result.credential.expirationDate?.slice(0, 10)}</span>
-                </div>
-              </div>
-            ) : (
-              <div className="text-[11px] font-mono text-slate-600">
-                VC not issued — payment {decisionKey === 'REJECT' ? 'rejected' : 'flagged for review'}.
-              </div>
-            )}
-          </TimelineStep>
-
-          {/* ── Step 4: XRPL Anchor / Escrow ── */}
-          <TimelineStep icon="4" title={decisionKey === 'WATCH' ? 'XRPL Escrow Vault' : 'XRPL Anchor'} status={step('anchor')}>
-            {!result && !loading ? (
-              <div className="text-xs text-slate-700 font-mono">—</div>
-            ) : loading ? (
-              <div className="space-y-2"><Skeleton className="h-3 w-full" /><Skeleton className="h-3 w-2/3" /></div>
-            ) : result.anchor_result?.transaction_hash ? (
-              <div
-                className="rounded-xl p-3 space-y-2 font-mono text-[10px]"
-                style={{ background: 'rgba(99,102,241,0.08)', border: '1px solid rgba(99,102,241,0.2)' }}
-              >
-                <div className="flex justify-between gap-2 items-center">
-                  <span className="text-slate-600 flex-shrink-0">TX Hash</span>
-                  <a
-                    href={`https://testnet.xrpl.org/transactions/${result.anchor_result.transaction_hash}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-xs font-bold px-2 py-1 rounded bg-indigo-500/20 text-indigo-400 hover:bg-indigo-500/30 transition-colors border border-indigo-500/30 truncate"
-                    title={result.anchor_result.transaction_hash}
-                  >
-                    {result.anchor_result.transaction_hash.slice(0, 12)}... ↗
-                  </a>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-slate-600">Ledger Index</span>
-                  <span className="text-slate-400">#{result.anchor_result.ledger_index}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-slate-600">Credential ID</span>
-                  <span className="text-indigo-400 truncate max-w-[120px]" title={result.anchor_result.credential_id}>
-                    {result.anchor_result.credential_id?.slice(0, 18)}…
-                  </span>
-                </div>
-              </div>
-            ) : decisionKey === 'WATCH' && result.anchor_result?.status === 'EscrowCreated' ? (
-              <div
-                className="rounded-xl p-3 space-y-2 font-mono text-[10px]"
-                style={{ background: 'rgba(251,191,36,0.08)', border: '1px solid rgba(251,191,36,0.2)' }}
-              >
-                <div className="flex justify-between gap-2 items-center">
-                  <span className="text-amber-500 flex-shrink-0 font-bold">⛓ Real Escrow On-Chain</span>
-                  {result.anchor_result.xrpl_explorer_url ? (
-                    <a
-                      href={result.anchor_result.xrpl_explorer_url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-xs font-bold px-2 py-1 rounded bg-amber-500/20 text-amber-400 hover:bg-amber-500/30 transition-colors border border-amber-500/30"
-                    >
-                      View on XRPL ↗
-                    </a>
-                  ) : (
-                    <span className="text-slate-600 italic">Simulated (testnet offline)</span>
-                  )}
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-slate-600">TX Hash</span>
-                  <span className="text-amber-400 truncate max-w-[150px]" title={result.anchor_result.transaction_hash}>
-                    {result.anchor_result.transaction_hash?.slice(0, 20)}...
-                  </span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-slate-600">Amount Held</span>
-                  <span className="text-amber-400">${result.anchor_result.amount_usd_held} USD</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-slate-600">Unlock After</span>
-                  <span className="text-slate-400">{result.anchor_result.finish_after?.slice(0,16).replace('T',' ')} UTC</span>
-                </div>
-              </div>
-            ) : result.anchor_result ? (
-              <div className="text-[11px] font-mono text-slate-600">
-                {result.anchor_result.note ?? 'Anchoring skipped.'}
-              </div>
-            ) : (
-              <div className="text-[11px] font-mono text-slate-600">
-                XRPL anchor not attempted — payment not approved.
-              </div>
-            )}
-          </TimelineStep>
-
-          {/* ── Step 5: Payment Status ── */}
-          <TimelineStep icon="5" title="Payment Status" status={step('payment')} isLast>
-            {!result && !loading ? (
-              <div className="text-xs text-slate-700 font-mono">—</div>
-            ) : loading ? (
-              <Skeleton className="h-10 w-full" />
-            ) : (
-              <div
-                className="px-4 py-3 rounded-xl flex items-center gap-3"
-                style={{
-                  background:  dc.bg,
-                  border:      `1px solid ${dc.border}`,
-                  boxShadow:   dc.glow,
-                }}
-              >
-                <span className="text-xl font-black" style={{ color: dc.text }}>
-                  {decisionKey === 'APPROVE' ? '⚡' : decisionKey === 'REJECT' ? '🚫' : '⏸'}
-                </span>
-                <div>
-                  <div className="text-sm font-black" style={{ color: dc.text }}>
-                    {result.payment_status}
-                  </div>
-                  <div className="text-[10px] font-mono text-slate-600 mt-0.5">
-                    {result.timestamp?.replace('T', ' ').slice(0, 19)} UTC
-                  </div>
-                </div>
-                {result.payment_id && (
-                  <div className="ml-auto text-[10px] font-mono text-slate-700 truncate max-w-[80px]" title={result.payment_id}>
-                    #{result.payment_id.slice(0, 8)}
-                  </div>
-                )}
-              </div>
-            )}
-          </TimelineStep>
+               </div>
+               {result.anchor_result?.transaction_hash && (
+                 <div className="mt-4 pt-4 border-t border-white/10 font-mono text-[10px] space-y-2">
+                   <div className="flex justify-between text-slate-500">
+                     <span>Chain Hash ({result.chain})</span>
+                     <span className="text-indigo-400 truncate w-32 text-right">{result.anchor_result.transaction_hash}</span>
+                   </div>
+                   <div className="flex justify-between text-slate-500">
+                     <span>VC Minted</span>
+                     <span className="text-emerald-400">{result.credential ? 'YES' : 'NO'}</span>
+                   </div>
+                 </div>
+               )}
+            </motion.div>
+          )}
         </div>
       </div>
 

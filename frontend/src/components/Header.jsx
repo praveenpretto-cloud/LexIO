@@ -33,7 +33,7 @@ export default function Header({ checkCount }) {
         {/* Center pack version tags */}
         <div className="hidden md:flex items-center gap-3">
           <div className="h-px w-8 bg-gradient-to-r from-transparent to-[#6366f1]/40" />
-          {['FATF Risk Pack v1.0', 'XRPL-VC Pack v1.0', 'W3C Cred Pack v1.1'].map((tag, i) => (
+          {['FATF Risk Pack v1.0', 'Omni-Chain Pack v2.0', 'W3C Cred Pack v1.1'].map((tag, i) => (
             <span
               key={tag}
               className="text-[10px] font-mono px-2.5 py-1 rounded-full border text-slate-400 tracking-wider"
