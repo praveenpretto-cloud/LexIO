@@ -18,7 +18,6 @@ export default function TransactionModal({ transaction, onClose }) {
 
   const CHAIN_META = {
     xrpl:     { label: '◈ XRPL',     color: '#818cf8', name: 'XRPL Testnet',  explorer: (hash) => `https://testnet.xrpl.org/transactions/${hash}` },
-    stellar:  { label: '✦ Stellar',  color: '#a5b4fc', name: 'Stellar Testnet', explorer: (hash) => `https://stellar.expert/explorer/testnet/tx/${hash}` },
     ethereum: { label: '⟠ Ethereum', color: '#627eea', name: 'Sepolia Etherscan', explorer: (hash) => `https://sepolia.etherscan.io/tx/${hash}` },
     solana:   { label: '◎ Solana',   color: '#14f195', name: 'Solana Devnet', explorer: (hash) => `https://explorer.solana.com/tx/${hash}?cluster=devnet` },
     base:     { label: '🔵 Base',     color: '#0052ff', name: 'Base Sepolia',  explorer: (hash) => `https://sepolia.basescan.org/tx/${hash}` },

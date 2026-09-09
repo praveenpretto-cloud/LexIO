@@ -32,7 +32,6 @@ const DEMO_WALLETS = {
 
 const CHAIN_OPTIONS = [
   { id: 'xrpl',     label: '◈ XRPL',     sublabel: 'Testnet · ~4s',  color: '#818cf8' },
-  { id: 'stellar',  label: '✦ Stellar',  sublabel: 'Testnet · ~5s',  color: '#a5b4fc' },
   { id: 'ethereum', label: '⟠ Ethereum', sublabel: 'Sepolia · ~12s', color: '#627eea' },
   { id: 'solana',   label: '◎ Solana',   sublabel: 'Devnet · ~400ms', color: '#14f195' },
   { id: 'base',     label: '🔵 Base',     sublabel: 'Sepolia · ~2s',  color: '#0052ff' },

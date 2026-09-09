@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 
-const CHAINS = ['XRPL', 'Stellar', 'Ethereum', 'Base', 'Polygon', 'Arbitrum', 'Solana', 'Aptos'];
+const CHAINS = ['XRPL', 'Ethereum', 'Base', 'Polygon', 'Arbitrum', 'Solana', 'Aptos'];
 const ACTIONS = ['Anchored', 'Escrow Created', 'VC Minted', 'Cleared'];
 
 export default function EcosystemPulse() {

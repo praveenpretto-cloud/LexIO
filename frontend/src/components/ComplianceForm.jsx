@@ -9,12 +9,7 @@ import { useState } from 'react'
 export default function ComplianceForm({ onResult, onLoadingChange }) {
   // Default addresses per network
   const DEFAULTS = {
-    Stellar: {
-      sender:   'GDHR3WJVS3IM5U7DFC3CBFMXPVLXA254MCLJRSJVHUR5BTHA2XJ7YHOZ',
-      receiver: 'GB3ST5WM4RBIOTBHS4GUUFH6VN5FEMVFZKAMVXRLL4D55DVQVKG7X66E',
-      label:    '✦ Stellar',
-      sublabel: 'Horizon Testnet · XLM · ~5s finality',
-    },
+
     XRPL: {
       sender:   'rapGvMNARmA46HRNoGBiTy1nEwiKdVTfPw',
       receiver: 'rEGcPEhZbvFMr14wBhm3TUc1EanWWMU367',
@@ -59,15 +54,15 @@ export default function ComplianceForm({ onResult, onLoadingChange }) {
     },
   }
 
-  const [senderAddress, setSenderAddress] = useState(DEFAULTS.Stellar.sender)
-  const [receiverAddress, setReceiverAddress] = useState(DEFAULTS.Stellar.receiver)
+  const [senderAddress, setSenderAddress] = useState(DEFAULTS.XRPL.sender)
+  const [receiverAddress, setReceiverAddress] = useState(DEFAULTS.XRPL.receiver)
   const [amount, setAmount] = useState('')
   const [origin, setOrigin] = useState('SG')
   const [destination, setDestination] = useState('EU')
   const [institution, setInstitution] = useState('MPI')
   const [activity, setActivity] = useState('transfer')
   const [asset, setAsset] = useState('USDC')
-  const [network, setNetwork] = useState('Stellar')
+  const [network, setNetwork] = useState('XRPL')
   const [walletType, setWalletType] = useState('Hosted')
   const [kyc, setKyc] = useState(false)
   const [ownership, setOwnership] = useState(false)
