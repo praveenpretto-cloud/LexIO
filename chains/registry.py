@@ -53,10 +53,6 @@ def _discover_adapters() -> None:
     except ImportError as e:
         print(f"[LexIO] XRPL adapter unavailable: {e}")
 
-    try:
-        import chains.stellar_adapter  # noqa: F401
-    except ImportError as e:
-        print(f"[LexIO] Stellar adapter unavailable: {e}")
 
     try:
         import chains.evm_adapter      # noqa: F401
