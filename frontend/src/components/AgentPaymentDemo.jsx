@@ -205,17 +205,22 @@ export default function AgentPaymentDemo() {
     setIsTerminalThinking(true)
     setProgressStep(0)
 
-    // Simulate streaming
+    // Simulate streaming to cover the real 12-second API latency
     setTimeout(() => {
       setTerminalLogs(prev => [...prev, { timestamp: Date.now(), agent: 'Swarm', message: `Initiating omni-chain transfer (${chain.toUpperCase()})...` }])
       setProgressStep(1)
-    }, 200)
-    setTimeout(() => setTerminalLogs(prev => [...prev, { timestamp: Date.now(), agent: 'KYC Agent', message: `Validating identity for ${sourceWallet.slice(0, 6)}...` }]), 800)
-    setTimeout(() => setTerminalLogs(prev => [...prev, { timestamp: Date.now(), agent: 'Risk Agent', message: 'Analyzing EVM history & sanctions list...' }]), 1500)
+    }, 400)
+    setTimeout(() => setTerminalLogs(prev => [...prev, { timestamp: Date.now(), agent: 'KYC Agent', message: `Validating identity for ${sourceWallet.slice(0, 6)}...` }]), 1500)
+    setTimeout(() => setTerminalLogs(prev => [...prev, { timestamp: Date.now(), agent: 'Risk Agent', message: 'Analyzing EVM history & sanctions list...' }]), 3000)
     setTimeout(() => {
       setTerminalLogs(prev => [...prev, { timestamp: Date.now(), agent: 'Risk Agent', message: 'No sanctions hit. Computing risk score...' }])
       setProgressStep(2)
-    }, 2200)
+    }, 4500)
+    if (useZk) {
+      setTimeout(() => setTerminalLogs(prev => [...prev, { timestamp: Date.now(), agent: 'Privacy Agent', message: 'Executing Groth16 SnarkJS prover...' }]), 6500)
+      setTimeout(() => setTerminalLogs(prev => [...prev, { timestamp: Date.now(), agent: 'Privacy Agent', message: 'Computing elliptic curve polynomials (bn128)...' }]), 8500)
+    }
+    setTimeout(() => setTerminalLogs(prev => [...prev, { timestamp: Date.now(), agent: 'Execution Agent', message: 'Broadcasting to XRP Ledger and awaiting consensus...' }]), useZk ? 10500 : 7000)
 
     const t0 = performance.now()
     try {
