@@ -456,25 +456,23 @@ export default function AgentPaymentDemo() {
               id="run-agent-demo-btn"
               type="submit"
               disabled={loading || !sourceWallet || !destWallet}
-              className="relative w-full py-4 rounded-xl font-black text-sm tracking-[0.15em] uppercase text-white overflow-hidden transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="relative w-full py-4 rounded-xl font-bold text-sm tracking-[0.1em] uppercase text-white overflow-hidden transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-blue-700"
               style={{
-                background: loading
-                  ? 'linear-gradient(135deg,#374151,#4b5563,#374151)'
-                  : 'linear-gradient(135deg,#4f46e5,#6366f1,#7c3aed)',
-                boxShadow: (!loading && sourceWallet) ? '0 4px 24px rgba(99,102,241,0.35)' : 'none',
+                background: loading ? '#334155' : '#2563EB',
+                boxShadow: '0 4px 14px rgba(0,0,0,0.2)',
               }}
             >
               <span className="relative z-10 flex items-center justify-center gap-3">
                 {loading ? (
                   <>
-                    <svg className="animate-spin h-4 w-4 text-amber-300" viewBox="0 0 24 24" fill="none">
+                    <svg className="animate-spin h-4 w-4 text-white" viewBox="0 0 24 24" fill="none">
                       <circle className="opacity-20" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" />
                       <path className="opacity-80" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
                     </svg>
-                    <span className="text-amber-200 tracking-[0.2em]">RUNNING PIPELINE…</span>
+                    <span className="text-white/80 tracking-[0.15em]">RUNNING PIPELINE…</span>
                   </>
                 ) : (
-                  <><span>⚡</span> RUN AGENT PAYMENT</>
+                  <><span>🛡️</span> SUBMIT TRANSFER</>
                 )}
               </span>
             </button>
@@ -542,7 +540,7 @@ export default function AgentPaymentDemo() {
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              className="glass-panel-glow rounded-2xl p-6 border"
+              className="glass-panel-glow rounded-2xl p-6 border flex flex-col gap-4"
             >
                <div className="flex items-center gap-4">
                   <div className="text-4xl">{DECISION_ICONS[decisionKey]}</div>
@@ -553,8 +551,9 @@ export default function AgentPaymentDemo() {
                     </div>
                   </div>
                </div>
+
                {result.anchor_result?.transaction_hash && (
-                 <div className="mt-4 pt-4 border-t border-white/10 font-mono text-[10px] space-y-2">
+                 <div className="pt-4 border-t border-white/10 font-mono text-[10px] space-y-2">
                    <div className="flex justify-between text-slate-500">
                      <span>Chain Hash ({result.chain})</span>
                      <span className="text-indigo-400 truncate w-32 text-right">{result.anchor_result.transaction_hash}</span>
@@ -564,6 +563,63 @@ export default function AgentPaymentDemo() {
                      <span className="text-emerald-400">{result.credential ? 'YES' : 'NO'}</span>
                    </div>
                  </div>
+               )}
+
+               {/* ZK Proof Visualizer */}
+               {result.credential?.credentialSubject?.proofType === 'Groth16' && result.credential?.credentialSubject?.zkProof && (
+                 <motion.div 
+                   initial={{ opacity: 0, height: 0 }}
+                   animate={{ opacity: 1, height: 'auto' }}
+                   className="mt-2 pt-4 border-t border-emerald-500/20"
+                 >
+                   <div className="flex items-center justify-between mb-3">
+                     <div className="text-[10px] font-bold tracking-widest uppercase text-emerald-400 flex items-center gap-2">
+                       <span>🛡️</span> Zero-Knowledge Proof (Groth16/bn128)
+                     </div>
+                   </div>
+                   
+                   <div className="bg-black/60 border border-emerald-500/20 rounded-xl p-3 font-mono text-[9px] overflow-hidden relative">
+                     {/* Decorative subtle grid */}
+                     <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAiIGhlaWdodD0iMjAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PHBhdGggZD0iTTEgMGwwIDIwTTEwIDBsMCAyME0yMCAwbDAgMjBNSDAgdjFIMjBNSDAgdjEwaDIwaDBWMjBIMCIgc3Ryb2tlPSJyZ2JhKDE2LCAxODUsIDEyOSwgMC4wNSkiIGZpbGw9Im5vbmUiLz48L3N2Zz4=')] opacity-30 pointer-events-none" />
+                     
+                     <div className="relative z-10 space-y-3">
+                       {/* pi_a */}
+                       <div>
+                         <span className="text-slate-500">const</span> <span className="text-purple-400">pi_a</span> <span className="text-slate-500">= [</span>
+                         <div className="pl-4 text-emerald-300/80 break-all leading-tight">
+                           "{result.credential.credentialSubject.zkProof.pi_a[0]}",<br/>
+                           "{result.credential.credentialSubject.zkProof.pi_a[1]}"
+                         </div>
+                         <span className="text-slate-500">];</span>
+                       </div>
+                       
+                       {/* pi_b */}
+                       <div>
+                         <span className="text-slate-500">const</span> <span className="text-purple-400">pi_b</span> <span className="text-slate-500">= [</span>
+                         <div className="pl-4 text-emerald-300/80 break-all leading-tight">
+                           ["{result.credential.credentialSubject.zkProof.pi_b[0][0]}",<br/>
+                            "{result.credential.credentialSubject.zkProof.pi_b[0][1]}"],<br/>
+                           ["{result.credential.credentialSubject.zkProof.pi_b[1][0]}",<br/>
+                            "{result.credential.credentialSubject.zkProof.pi_b[1][1]}"]
+                         </div>
+                         <span className="text-slate-500">];</span>
+                       </div>
+                       
+                       {/* pi_c */}
+                       <div>
+                         <span className="text-slate-500">const</span> <span className="text-purple-400">pi_c</span> <span className="text-slate-500">= [</span>
+                         <div className="pl-4 text-emerald-300/80 break-all leading-tight">
+                           "{result.credential.credentialSubject.zkProof.pi_c[0]}",<br/>
+                           "{result.credential.credentialSubject.zkProof.pi_c[1]}"
+                         </div>
+                         <span className="text-slate-500">];</span>
+                       </div>
+                     </div>
+                   </div>
+                   <div className="text-center mt-3 text-[9px] text-slate-500 font-mono italic">
+                     ✓ Mathematically verifiable on-chain via SnarkJS Verifier
+                   </div>
+                 </motion.div>
                )}
             </motion.div>
           )}
