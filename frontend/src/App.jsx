@@ -7,6 +7,7 @@ import SessionHistory   from './components/SessionHistory'
 import AgentPaymentDemo from './components/AgentPaymentDemo'
 import PolicyStudio     from './components/PolicyStudio'
 import EcosystemPulse   from './components/EcosystemPulse'
+import B2BDashboard     from './components/B2BDashboard'
 
 export default function App() {
   const [result,       setResult]       = useState(null)
@@ -49,6 +50,7 @@ export default function App() {
   const TABS = [
     { key: 'policy', label: 'Policy Engine', icon: '⚖',  sublabel: 'MAS / MiCA / GENIUS' },
     { key: 'agent',  label: 'Agent Demo',    icon: '🤖', sublabel: 'SCDD / CDD / EDD' },
+    { key: 'dashboard', label: 'B2B Dashboard', icon: '🏢', sublabel: 'Compliance Hub' },
     { key: 'studio', label: 'Policy Studio', icon: '🛠️', sublabel: 'No-Code Builder' },
   ]
 
@@ -103,6 +105,8 @@ export default function App() {
 
         {activeTab === 'studio' ? (
           <PolicyStudio />
+        ) : activeTab === 'dashboard' ? (
+          <B2BDashboard />
         ) : activeTab === 'agent' ? (
           <>
             {/* Agent Demo page */}
