@@ -347,12 +347,12 @@ async def compliance_history(
     db: AsyncSession = Depends(get_async_db),
 ):
     """Returns paginated compliance check history, ordered by most recent first."""
-    count_query = await db.execute(select(func.count()).select_from(TransactionLog))
+    count_query = await db.execute(select(func.count()).select_from(AgentTransactionLog))
     total = count_query.scalar_one()
 
     records_query = await db.execute(
-        select(TransactionLog)
-        .order_by(TransactionLog.checked_at.desc())
+        select(AgentTransactionLog)
+        .order_by(AgentTransactionLog.checked_at.desc())
         .offset(offset)
         .limit(limit)
     )
@@ -365,16 +365,16 @@ async def compliance_history(
         "records": [
             {
                 "id": r.id,
-                "amount": r.amount,
-                "stablecoin_type": r.stablecoin_type,
-                "sender_address": r.sender_address,
-                "receiver_address": r.receiver_address,
-                "sender_jurisdiction": r.sender_jurisdiction,
-                "receiver_jurisdiction": r.receiver_jurisdiction,
-                "status": r.status,
-                "reason": r.reason,
-                "authorization_hash": r.authorization_hash,
-                "network": r.network,
+                "amount": r.amount_usd,
+                "stablecoin_type": "USD",
+                "sender_address": r.source_wallet,
+                "receiver_address": r.destination_wallet,
+                "sender_jurisdiction": "AI-Checked",
+                "receiver_jurisdiction": "AI-Checked",
+                "status": r.decision,
+                "reason": "\n".join(json.loads(r.reasons_json)) if r.reasons_json else "Cleared",
+                "authorization_hash": "N/A - See DB",
+                "network": "Omni-chain",
                 "checked_at": r.checked_at.isoformat(),
             }
             for r in records
