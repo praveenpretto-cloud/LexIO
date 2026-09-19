@@ -6,23 +6,23 @@
   --font-sans: 'Inter', sans-serif;
   --font-mono: 'JetBrains Mono', monospace;
 
-  --color-surface-950: #05080f;
-  --color-surface-900: #090d18;
-  --color-surface-800: #0d1220;
-  --color-surface-700: #111827;
-  --color-surface-600: #1a2235;
+  --color-surface-950: #050505;
+  --color-surface-900: #0a0a0a;
+  --color-surface-800: #111111;
+  --color-surface-700: #1a1a1a;
+  --color-surface-600: #222222;
 
-  --color-brand-400: #818cf8;
-  --color-brand-500: #6366f1;
-  --color-brand-600: #4f46e5;
+  --color-brand-400: #fff;
+  --color-brand-500: #fff;
+  --color-brand-600: #fff;
 
-  --color-approve-400: #34d399;
-  --color-approve-500: #10b981;
-  --color-approve-600: #059669;
+  --color-approve-400: #00FF00;
+  --color-approve-500: #00FF00;
+  --color-approve-600: #00CC00;
 
-  --color-reject-400:  #fb7185;
-  --color-reject-500:  #f43f5e;
-  --color-reject-600:  #e11d48;
+  --color-reject-400:  #FF0000;
+  --color-reject-500:  #FF0000;
+  --color-reject-600:  #CC0000;
 }
 
 /* ── Base ─────────────────────────────────────────────── */
@@ -51,58 +51,40 @@ body {
   z-index: 0;
 }
 
-/* ── Deep Animated Gradient ───────────────────────────── */
-.bg-glow-mesh {
-  position: fixed;
-  inset: 0;
-  background: 
-    radial-gradient(circle at 50% 0%, rgba(37, 99, 235, 0.04) 0%, transparent 60%);
-  z-index: -1;
-  /* Removed intense gaming pulse animation */
-}
+/* Removed glow mesh */
 
 /* ── Premium Glass Panels ─────────────────────────────── */
 .glass-panel {
-  background: #0B0F19;
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  box-shadow: 0 4px 12px 0 rgba(0, 0, 0, 0.2);
+  background: #000000;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  box-shadow: 0 4px 12px 0 rgba(0, 0, 0, 0.5);
 }
 
 .glass-panel-glow {
-  background: #0F1523;
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  box-shadow: 0 8px 24px 0 rgba(0, 0, 0, 0.3);
+  background: #050505;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 8px 24px 0 rgba(0, 0, 0, 0.6);
 }
 
-/* ── Scanlines ────────────────────────────────────────── */
-.bg-scanlines {
-  position: fixed;
-  inset: 0;
-  background: repeating-linear-gradient(
-    0deg, transparent, transparent 2px,
-    rgba(0,0,0,0.025) 2px, rgba(0,0,0,0.025) 4px
-  );
-  pointer-events: none;
-  z-index: 0;
-}
+/* Removed scanlines */
 
 /* ── Custom checkbox ──────────────────────────────────── */
 .custom-check {
   appearance: none;
   width: 20px;
   height: 20px;
-  border: 2px solid rgba(99,102,241,0.4);
+  border: 2px solid rgba(255,255,255,0.2);
   border-radius: 5px;
-  background: rgba(99,102,241,0.06);
+  background: rgba(255,255,255,0.05);
   cursor: pointer;
   position: relative;
   flex-shrink: 0;
   transition: all 0.15s ease;
 }
 .custom-check:checked {
-  background: #6366f1;
-  border-color: #6366f1;
-  box-shadow: 0 0 12px rgba(99,102,241,0.5);
+  background: #fff;
+  border-color: #fff;
+  box-shadow: 0 0 12px rgba(255,255,255,0.5);
 }
 .custom-check:checked::after {
   content: '✓';

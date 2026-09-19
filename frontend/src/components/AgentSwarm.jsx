@@ -16,16 +16,16 @@ export default function AgentSwarm({ source, dest, status }) {
   }, [status])
 
   const getPulseColor = () => {
-    if (status === 'approve') return '#34d399' // Emerald
-    if (status === 'reject') return '#fb7185' // Rose
+    if (status === 'approve') return '#00FF00' // Neon Green
+    if (status === 'reject') return '#FF0000' // Neon Red
     if (status === 'watch') return '#fbbf24' // Amber
-    return '#6366f1' // Indigo for loading
+    return '#ffffff' // White for loading
   }
 
   const isComplete = ['approve', 'reject', 'watch'].includes(status)
 
   return (
-    <div className="relative w-full h-40 bg-[#0d1220]/60 rounded-2xl border border-white/5 overflow-hidden flex items-center justify-center mb-6">
+    <div className="relative w-full h-40 bg-[#050505] rounded-2xl border border-[#222] overflow-hidden flex items-center justify-center mb-6">
       <div className="absolute inset-0 bg-scanlines opacity-50 pointer-events-none" />
       
       <svg className="absolute inset-0 w-full h-full" preserveAspectRatio="none">
@@ -35,7 +35,7 @@ export default function AgentSwarm({ source, dest, status }) {
         <line x1="50%" y1="10%" x2="50%" y2="90%" stroke="rgba(255,255,255,0.02)" strokeWidth="1" />
         
         {/* Main Connection Line */}
-        <line x1="25%" y1="50%" x2="75%" y2="50%" stroke="rgba(99,102,241,0.2)" strokeWidth="2" strokeDasharray="4 4" />
+        <line x1="25%" y1="50%" x2="75%" y2="50%" stroke="rgba(255,255,255,0.2)" strokeWidth="2" strokeDasharray="4 4" />
         
         {/* Animated Pulse */}
         {(status === 'loading' || (status === 'watch' && pulsePos < 50)) && (
@@ -51,10 +51,10 @@ export default function AgentSwarm({ source, dest, status }) {
 
       {/* Nodes */}
       <div className="absolute left-[25%] -translate-x-1/2 flex flex-col items-center">
-        <div className="w-12 h-12 rounded-full flex items-center justify-center bg-indigo-500/10 border border-indigo-500/30 shadow-[0_0_15px_rgba(99,102,241,0.2)]">
+        <div className="w-12 h-12 rounded-full flex items-center justify-center bg-[#111] border border-[#333] shadow-[0_0_15px_rgba(255,255,255,0.1)]">
           🤖
         </div>
-        <span className="text-[10px] font-mono text-slate-500 mt-2 tracking-widest uppercase">Source Agent</span>
+        <span className="text-[10px] font-mono text-[#666] mt-2 tracking-widest uppercase">Source Agent</span>
       </div>
 
       {status === 'watch' && (
@@ -75,10 +75,10 @@ export default function AgentSwarm({ source, dest, status }) {
       )}
 
       <div className="absolute left-[75%] -translate-x-1/2 flex flex-col items-center">
-        <div className="w-12 h-12 rounded-full flex items-center justify-center bg-indigo-500/10 border border-indigo-500/30 shadow-[0_0_15px_rgba(99,102,241,0.2)]">
+        <div className="w-12 h-12 rounded-full flex items-center justify-center bg-[#111] border border-[#333] shadow-[0_0_15px_rgba(255,255,255,0.1)]">
           🤖
         </div>
-        <span className="text-[10px] font-mono text-slate-500 mt-2 tracking-widest uppercase">Dest Agent</span>
+        <span className="text-[10px] font-mono text-[#666] mt-2 tracking-widest uppercase">Dest Agent</span>
       </div>
     </div>
   )

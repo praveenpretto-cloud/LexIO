@@ -58,6 +58,9 @@ class AgentTransactionLog(Base):
     amount_usd:        Mapped[float] = mapped_column(Float, nullable=True)
     decision:          Mapped[str]   = mapped_column(String(16), nullable=False)   # APPROVE|REJECT|WATCH
     risk_tier:         Mapped[str]   = mapped_column(String(8),  nullable=False)   # SCDD|CDD|EDD
+    network:           Mapped[str]   = mapped_column(String(16), nullable=True)
+    use_zk:            Mapped[bool]  = mapped_column(Boolean, nullable=True)
+    authorization_hash: Mapped[str]  = mapped_column(String(128), nullable=True)
     reasons_json:      Mapped[str]   = mapped_column(Text, nullable=True)          # JSON list
     confidence_score:  Mapped[float] = mapped_column(Float, nullable=True)
     flagged_by_json:   Mapped[str]   = mapped_column(Text, nullable=True)          # JSON list

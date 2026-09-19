@@ -44,8 +44,8 @@ export default function EcosystemPulse() {
             className="absolute flex flex-col items-center gap-1"
             style={{ left: `${pulse.x}%`, top: `${pulse.y}%` }}
           >
-            <div className="w-2 h-2 rounded-full bg-indigo-500 shadow-[0_0_15px_rgba(99,102,241,1)] animate-pulse" />
-            <div className="glass-panel-glow px-2 py-1 rounded-md text-[9px] font-mono whitespace-nowrap text-indigo-200 opacity-60">
+            <div className="w-2 h-2 rounded-full bg-[#00FF00] shadow-[0_0_15px_rgba(0,255,0,0.8)] animate-pulse" />
+            <div className="glass-panel-glow px-2 py-1 rounded-md text-[9px] font-mono whitespace-nowrap text-[#00FF00] opacity-60">
               [{pulse.chain}] ${pulse.amount.toLocaleString()} {pulse.action}
             </div>
           </motion.div>

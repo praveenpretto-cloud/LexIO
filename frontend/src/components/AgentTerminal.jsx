@@ -7,11 +7,11 @@ export default function AgentTerminal({ logs = [], isThinking = false }) {
     <div className="glass-panel rounded-2xl border overflow-hidden flex flex-col w-full mt-4">
       <div className="px-4 py-3 border-b border-white/5 bg-white/5 flex items-center justify-between">
         <div className="flex items-center gap-2 text-[10px] font-mono tracking-widest text-slate-400 uppercase font-bold">
-          <Terminal size={14} className="text-indigo-400" />
+          <Terminal size={14} className="text-[#00FF00]" />
           Live Agent Swarm Terminal
         </div>
         <div className="flex items-center gap-2">
-          <span className={`w-2 h-2 rounded-full ${isThinking ? 'bg-indigo-400 animate-pulse' : 'bg-emerald-400'}`} />
+          <span className={`w-2 h-2 rounded-full ${isThinking ? 'bg-[#00FF00] animate-pulse' : 'bg-emerald-400'}`} />
           <span className="text-[9px] font-mono uppercase text-slate-500 font-bold tracking-widest">
             {isThinking ? 'Processing' : 'Idle'}
           </span>
@@ -43,11 +43,11 @@ export default function AgentTerminal({ logs = [], isThinking = false }) {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              className="flex items-center gap-2 mt-2 text-indigo-400 ml-[85px]"
+              className="flex items-center gap-2 mt-2 text-[#00FF00] ml-[85px]"
             >
-              <span className="w-1.5 h-1.5 bg-indigo-400/80 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
-              <span className="w-1.5 h-1.5 bg-indigo-400/80 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
-              <span className="w-1.5 h-1.5 bg-indigo-400/80 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+              <span className="w-1.5 h-1.5 bg-[#00FF00] rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
+              <span className="w-1.5 h-1.5 bg-[#00FF00] rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
+              <span className="w-1.5 h-1.5 bg-[#00FF00] rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
             </motion.div>
           )}
         </AnimatePresence>

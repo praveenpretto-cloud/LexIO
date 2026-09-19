@@ -4,9 +4,9 @@ import { useEffect, useRef, useState } from 'react'
 
 function detectRule(reason) {
   if (!reason) return null
-  if (reason.includes('MAS'))    return { label: 'MAS Pack v0.9.2',  color: 'text-cyan-400',   bg: 'bg-cyan-400/10 border-cyan-400/20' }
-  if (reason.includes('EU TFR')) return { label: 'EU TFR Pack v0.8.4', color: 'text-violet-400', bg: 'bg-violet-400/10 border-violet-400/20' }
-  if (reason.includes('MiCA'))   return { label: 'MiCA Pack v1.0.1', color: 'text-fuchsia-400', bg: 'bg-fuchsia-400/10 border-fuchsia-400/20' }
+  if (reason.includes('MAS'))    return { label: 'MAS Pack v0.9.2',  color: 'text-[#888]',   bg: 'bg-[#111] border-[#333]' }
+  if (reason.includes('EU TFR')) return { label: 'EU TFR Pack v0.8.4', color: 'text-[#888]', bg: 'bg-[#111] border-[#333]' }
+  if (reason.includes('MiCA'))   return { label: 'MiCA Pack v1.0.1', color: 'text-[#888]', bg: 'bg-[#111] border-[#333]' }
   return { label: 'ALL CLEAR', color: 'text-emerald-400', bg: 'bg-emerald-400/10 border-emerald-400/20' }
 }
 
@@ -36,16 +36,16 @@ export default function ResultPanel({ result, flashKey, isLoading }) {
     return (
       <div className="h-full flex flex-col items-center justify-center gap-6 text-center p-10">
         <div className="relative flex h-16 w-16 items-center justify-center">
-          <span className="animate-ping absolute h-full w-full rounded-full bg-[#6366f1] opacity-15" />
-          <span className="animate-ping absolute h-12 w-12 rounded-full bg-[#818cf8] opacity-15" style={{ animationDelay: '0.2s' }} />
-          <svg className="animate-spin h-10 w-10 text-[#818cf8]" viewBox="0 0 24 24" fill="none">
+          <span className="animate-ping absolute h-full w-full rounded-full bg-white opacity-15" />
+          <span className="animate-ping absolute h-12 w-12 rounded-full bg-white opacity-15" style={{ animationDelay: '0.2s' }} />
+          <svg className="animate-spin h-10 w-10 text-white" viewBox="0 0 24 24" fill="none">
             <circle className="opacity-20" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2.5"/>
             <path className="opacity-90" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"/>
           </svg>
         </div>
         <div>
           <div className="text-white font-bold text-sm tracking-wide">Evaluating Policy…</div>
-          <div className="text-slate-600 text-xs mt-1 font-mono">Running MAS Pack · MiCA Pack · EU TFR rules</div>
+          <div className="text-[#888] text-xs mt-1 font-mono">Running MAS Pack · MiCA Pack · EU TFR rules</div>
         </div>
       </div>
     )

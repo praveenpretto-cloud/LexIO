@@ -5,6 +5,10 @@
     {
       "source": "/api/:path*",
       "destination": "https://lexio-backend-ruo1.onrender.com/api/:path*"
+    },
+    {
+      "source": "/static/:path*",
+      "destination": "https://lexio-backend-ruo1.onrender.com/static/:path*"
     }
   ]
 }

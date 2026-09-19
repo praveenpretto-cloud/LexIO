@@ -57,15 +57,11 @@ export default function App() {
   return (
     <div className="relative min-h-screen flex flex-col">
       <div className="bg-glow-mesh" />
-      <EcosystemPulse />
-      <div className="bg-grid opacity-50" />
-      <div className="bg-scanlines opacity-50" />
-
       <Header checkCount={checkCount} />
 
       {/* ── Floating Dock Tab Bar ── */}
       <div className="relative z-20 flex justify-center mt-6 mb-2">
-        <div className="glass-panel-glow rounded-full p-1.5 flex gap-1 items-center shadow-2xl">
+        <div className="bg-[#000] border border-[#222] rounded-full p-1.5 flex gap-1 items-center shadow-2xl">
           {TABS.map(tab => {
             const isActive = activeTab === tab.key
             return (
@@ -81,16 +77,16 @@ export default function App() {
                 {isActive && (
                   <motion.div
                     layoutId="activeTab"
-                    className="absolute inset-0 rounded-full bg-gradient-to-r from-indigo-600/40 to-indigo-400/40 border border-indigo-400/30 shadow-[0_0_15px_rgba(99,102,241,0.3)]"
+                    className="absolute inset-0 rounded-full bg-[#111] border border-[#333] shadow-[0_0_15px_rgba(255,255,255,0.05)]"
                     transition={{ type: 'spring', stiffness: 400, damping: 30 }}
                   />
                 )}
                 <span className="relative z-10 flex items-center gap-2">
-                  <span className={isActive ? 'text-indigo-400' : 'text-slate-500'}>{tab.icon}</span>
+                  <span className={isActive ? 'text-white' : 'text-[#666]'}>{tab.icon}</span>
                   <span className="tracking-wide">{tab.label}</span>
                 </span>
                 {isActive && tab.sublabel && (
-                  <span className="relative z-10 hidden sm:block text-[10px] font-mono px-2 py-0.5 rounded-full bg-black/40 text-indigo-300 border border-indigo-400/20">
+                  <span className="relative z-10 hidden sm:block text-[9px] font-mono px-2 py-0.5 rounded-full bg-white/10 text-white border border-white/20">
                     {tab.sublabel}
                   </span>
                 )}
@@ -113,9 +109,9 @@ export default function App() {
             <div>
               <h1 className="text-3xl font-black tracking-tight text-white">
                 Agentic{' '}
-                <span style={{ color: '#818cf8' }}>Payment Flow</span>
+                <span className="text-[#888]">Payment Flow</span>
               </h1>
-              <p className="text-sm text-slate-500 mt-1">
+              <p className="text-sm text-[#555] mt-1">
                 End-to-end agent-to-agent payment pipeline: risk-tier compliance &rarr; W3C Verifiable Credential &rarr; XRPL on-chain anchor.
               </p>
             </div>
@@ -134,14 +130,14 @@ export default function App() {
               <div>
                 <h1 className="text-3xl font-black tracking-tight text-white">
                   Programmable{' '}
-                  <span style={{ color: '#818cf8' }}>Policy Engine</span>
+                  <span className="text-[#888]">Policy Engine</span>
                 </h1>
-                <p className="text-sm text-slate-500 mt-1">
+                <p className="text-sm text-[#555] mt-1">
                   Evaluate regulated digital asset transactions using machine-executable policy rules derived from MAS, MiCA, and GENIUS Act frameworks.
                 </p>
-                <p className="text-[11px] font-mono text-slate-700 mt-1.5 tracking-wide">
+                <p className="text-[11px] font-mono text-[#444] mt-1.5 tracking-wide">
                   Powered by the{' '}
-                  <span className="font-semibold" style={{ color: 'rgba(129,140,248,0.55)' }}>
+                  <span className="font-semibold text-[#888]">
                     LexIO Compliance Compiler
                   </span>
                 </p>
@@ -171,16 +167,16 @@ export default function App() {
               <div
                 className="relative border rounded-2xl backdrop-blur-sm overflow-hidden transition-all duration-500"
                 style={{
-                  background:  result ? 'rgba(13,18,32,0.6)' : 'rgba(13,18,32,0.4)',
+                  background:  result ? 'rgba(10,10,10,0.8)' : 'rgba(10,10,10,0.6)',
                   borderColor: isLoading
-                    ? 'rgba(99,102,241,0.30)'
+                    ? 'rgba(255,255,255,0.2)'
                     : result
-                      ? isApprove ? 'rgba(16,185,129,0.30)' : 'rgba(244,63,94,0.30)'
+                      ? isApprove ? 'rgba(0,255,0,0.30)' : 'rgba(255,0,0,0.30)'
                       : 'rgba(255,255,255,0.05)',
                   boxShadow: isLoading
-                    ? '0 0 40px rgba(99,102,241,0.12)'
+                    ? '0 0 40px rgba(255,255,255,0.05)'
                     : result
-                      ? isApprove ? '0 0 40px rgba(16,185,129,0.15)' : '0 0 40px rgba(244,63,94,0.15)'
+                      ? isApprove ? '0 0 40px rgba(0,255,0,0.1)' : '0 0 40px rgba(255,0,0,0.1)'
                       : 'none',
                   transition: 'border-color 0.5s ease, box-shadow 0.5s ease',
                 }}
@@ -190,11 +186,11 @@ export default function App() {
                   className="absolute top-0 left-0 right-0 h-0.5 transition-all duration-700"
                   style={{
                     background: isLoading
-                      ? 'linear-gradient(90deg,#4f46e5,#818cf8,#4f46e5)'
+                      ? 'linear-gradient(90deg,#fff,#666,#fff)'
                       : result
                         ? isApprove
-                          ? 'linear-gradient(90deg,#10b981,#34d399,#10b981)'
-                          : 'linear-gradient(90deg,#f43f5e,#fb7185,#f43f5e)'
+                          ? 'linear-gradient(90deg,#00FF00,#00CC00,#00FF00)'
+                          : 'linear-gradient(90deg,#FF0000,#CC0000,#FF0000)'
                         : 'transparent',
                     opacity: (isLoading || result) ? 1 : 0,
                   }}

@@ -193,16 +193,16 @@ export default function ComplianceForm({ onResult, onLoadingChange }) {
   }
 
   return (
-    <div className="bg-[#0d1220]/60 border border-white/6 rounded-2xl p-6 backdrop-blur-sm flex flex-col gap-5">
+    <div className="bg-[#050505] border border-[#222] rounded-2xl p-6 backdrop-blur-sm flex flex-col gap-5">
 
       {/* Panel header */}
       <div className="flex items-center gap-3 pb-4 border-b border-white/5">
-        <div className="w-8 h-8 rounded-lg bg-[#6366f1]/15 border border-[#6366f1]/20 flex items-center justify-center text-sm">
+        <div className="w-8 h-8 rounded-lg bg-[#111] border border-[#333] flex items-center justify-center text-sm">
           ⚡
         </div>
         <div>
           <div className="text-sm font-bold text-white">Transaction Parameters</div>
-          <div className="text-[11px] text-slate-600">Configure the transfer for policy evaluation</div>
+          <div className="text-[11px] text-[#555]">Configure the transfer for policy evaluation</div>
         </div>
         {loading && (
           <div className="ml-auto flex items-center gap-1.5 text-[10px] font-mono text-amber-400">
@@ -219,7 +219,7 @@ export default function ComplianceForm({ onResult, onLoadingChange }) {
 
         {/* ── Origin Jurisdiction ── */}
         <div className="space-y-2">
-          <label htmlFor="origin" className="block text-[10px] font-bold tracking-widest uppercase text-slate-500">
+          <label htmlFor="origin" className="block text-[10px] font-bold tracking-widest uppercase text-[#666]">
             Origin Jurisdiction
           </label>
           <select
@@ -228,10 +228,10 @@ export default function ComplianceForm({ onResult, onLoadingChange }) {
             onChange={e => setOrigin(e.target.value)}
             disabled={loading}
             className="
-              styled-select w-full bg-[#111827]/60 border border-white/8 rounded-xl
+              styled-select w-full bg-[#111] border border-[#222] rounded-xl
               px-4 py-3.5 appearance-none text-white font-mono font-semibold text-sm
               outline-none cursor-pointer transition-all duration-200
-              focus:border-[#6366f1]/60 disabled:opacity-50
+              focus:border-[#888] disabled:opacity-50
             "
           >
             <option value="EU">European Union</option>
@@ -246,7 +246,7 @@ export default function ComplianceForm({ onResult, onLoadingChange }) {
 
         {/* ── Destination Jurisdiction ── */}
         <div className="space-y-2">
-          <label htmlFor="destination" className="block text-[10px] font-bold tracking-widest uppercase text-slate-500">
+          <label htmlFor="destination" className="block text-[10px] font-bold tracking-widest uppercase text-[#666]">
             Destination Jurisdiction
           </label>
           <select
@@ -255,10 +255,10 @@ export default function ComplianceForm({ onResult, onLoadingChange }) {
             onChange={e => setDestination(e.target.value)}
             disabled={loading}
             className="
-              styled-select w-full bg-[#111827]/60 border border-white/8 rounded-xl
+              styled-select w-full bg-[#111] border border-[#222] rounded-xl
               px-4 py-3.5 appearance-none text-white font-mono font-semibold text-sm
               outline-none cursor-pointer transition-all duration-200
-              focus:border-[#6366f1]/60 disabled:opacity-50
+              focus:border-[#888] disabled:opacity-50
             "
           >
             <option value="EU">European Union</option>
@@ -272,7 +272,7 @@ export default function ComplianceForm({ onResult, onLoadingChange }) {
 
         {/* ── Institution Type ── */}
         <div className="space-y-2">
-          <label htmlFor="institution" className="block text-[10px] font-bold tracking-widest uppercase text-slate-500">
+          <label htmlFor="institution" className="block text-[10px] font-bold tracking-widest uppercase text-[#666]">
             Institution Type
           </label>
           <select
@@ -281,10 +281,10 @@ export default function ComplianceForm({ onResult, onLoadingChange }) {
             onChange={e => setInstitution(e.target.value)}
             disabled={loading}
             className="
-              styled-select w-full bg-[#111827]/60 border border-white/8 rounded-xl
+              styled-select w-full bg-[#111] border border-[#222] rounded-xl
               px-4 py-3.5 appearance-none text-white font-mono font-semibold text-sm
               outline-none cursor-pointer transition-all duration-200
-              focus:border-[#6366f1]/60 disabled:opacity-50
+              focus:border-[#888] disabled:opacity-50
             "
           >
                   <option value="MPI">MPI (Major Payment Institution - MAS)</option>
@@ -299,7 +299,7 @@ export default function ComplianceForm({ onResult, onLoadingChange }) {
 
         {/* ── Activity ── */}
         <div className="space-y-2">
-          <label htmlFor="activity" className="block text-[10px] font-bold tracking-widest uppercase text-slate-500">
+          <label htmlFor="activity" className="block text-[10px] font-bold tracking-widest uppercase text-[#666]">
             Activity
           </label>
           <select
@@ -308,10 +308,10 @@ export default function ComplianceForm({ onResult, onLoadingChange }) {
             onChange={e => setActivity(e.target.value)}
             disabled={loading}
             className="
-              styled-select w-full bg-[#111827]/60 border border-white/8 rounded-xl
+              styled-select w-full bg-[#111] border border-[#222] rounded-xl
               px-4 py-3.5 appearance-none text-white font-mono font-semibold text-sm
               outline-none cursor-pointer transition-all duration-200
-              focus:border-[#6366f1]/60 disabled:opacity-50
+              focus:border-[#888] disabled:opacity-50
             "
           >
             <option value="transfer">Cross-border Transfer</option>
@@ -323,7 +323,7 @@ export default function ComplianceForm({ onResult, onLoadingChange }) {
 
         {/* ── Network Selector ── */}
         <div className="space-y-2">
-          <label className="block text-[10px] font-bold tracking-widest uppercase text-slate-500">
+          <label className="block text-[10px] font-bold tracking-widest uppercase text-[#666]">
             Blockchain Network
           </label>
           <div className="grid grid-cols-4 gap-1.5">
@@ -349,14 +349,14 @@ export default function ComplianceForm({ onResult, onLoadingChange }) {
               </button>
             ))}
           </div>
-          <div className="text-[10px] font-mono text-slate-700 px-1">
+          <div className="text-[10px] font-mono text-[#444] px-1">
             {DEFAULTS[network]?.sublabel || ''}
           </div>
         </div>
 
         {/* ── Asset Type ── */}
         <div className="space-y-2">
-          <label htmlFor="asset" className="block text-[10px] font-bold tracking-widest uppercase text-slate-500">
+          <label htmlFor="asset" className="block text-[10px] font-bold tracking-widest uppercase text-[#666]">
             Asset
           </label>
           <div className="flex gap-2">
@@ -382,9 +382,9 @@ export default function ComplianceForm({ onResult, onLoadingChange }) {
 
         {/* ── Wallet Type ── */}
         <div className="space-y-2">
-          <label htmlFor="walletType" className="block text-[10px] font-bold tracking-widest uppercase text-slate-500">
+          <label htmlFor="walletType" className="block text-[10px] font-bold tracking-widest uppercase text-[#666]">
             Wallet Type{' '}
-            <span className="text-slate-700 normal-case tracking-normal font-normal">/ Custodial classification</span>
+            <span className="text-[#444] normal-case tracking-normal font-normal">/ Custodial classification</span>
           </label>
           <select
             id="walletType"
@@ -392,10 +392,10 @@ export default function ComplianceForm({ onResult, onLoadingChange }) {
             onChange={e => setWalletType(e.target.value)}
             disabled={loading}
             className="
-              styled-select w-full bg-[#111827]/60 border border-white/8 rounded-xl
+              styled-select w-full bg-[#111] border border-[#222] rounded-xl
               px-4 py-3.5 appearance-none text-white font-mono font-semibold text-sm
               outline-none cursor-pointer transition-all duration-200
-              focus:border-[#6366f1]/60 disabled:opacity-50
+              focus:border-[#888] disabled:opacity-50
             "
           >
             <option value="Hosted">Hosted — Custodial (Exchange / VASP)</option>
@@ -414,7 +414,7 @@ export default function ComplianceForm({ onResult, onLoadingChange }) {
 
         {/* ── Sender Address ── */}
         <div className="space-y-2">
-          <label htmlFor="senderAddress" className="block text-[10px] font-bold tracking-widest uppercase text-slate-500">
+          <label htmlFor="senderAddress" className="block text-[10px] font-bold tracking-widest uppercase text-[#666]">
             Sender Address
           </label>
           <input
@@ -424,10 +424,10 @@ export default function ComplianceForm({ onResult, onLoadingChange }) {
             onChange={e => setSenderAddress(e.target.value)}
             disabled={loading}
             className="
-              w-full bg-[#111827]/60 border border-white/8 rounded-xl
+              w-full bg-[#111] border border-[#222] rounded-xl
               px-4 py-3 text-white font-mono text-xs
               outline-none transition-all duration-200
-              focus:border-[#6366f1]/60 focus:bg-[#6366f1]/5
+              focus:border-[#888] focus:bg-[#6366f1]/5
               disabled:opacity-50
             "
           />
@@ -435,7 +435,7 @@ export default function ComplianceForm({ onResult, onLoadingChange }) {
 
         {/* ── Receiver Address ── */}
         <div className="space-y-2">
-          <label htmlFor="receiverAddress" className="block text-[10px] font-bold tracking-widest uppercase text-slate-500">
+          <label htmlFor="receiverAddress" className="block text-[10px] font-bold tracking-widest uppercase text-[#666]">
             Receiver Address
           </label>
           <input
@@ -445,10 +445,10 @@ export default function ComplianceForm({ onResult, onLoadingChange }) {
             onChange={e => setReceiverAddress(e.target.value)}
             disabled={loading}
             className="
-              w-full bg-[#111827]/60 border border-white/8 rounded-xl
+              w-full bg-[#111] border border-[#222] rounded-xl
               px-4 py-3 text-white font-mono text-xs
               outline-none transition-all duration-200
-              focus:border-[#6366f1]/60 focus:bg-[#6366f1]/5
+              focus:border-[#888] focus:bg-[#6366f1]/5
               disabled:opacity-50
             "
           />
@@ -456,9 +456,9 @@ export default function ComplianceForm({ onResult, onLoadingChange }) {
 
         {/* ── Amount ── */}
         <div className="space-y-2">
-          <label htmlFor="amount" className="block text-[10px] font-bold tracking-widest uppercase text-slate-500">
+          <label htmlFor="amount" className="block text-[10px] font-bold tracking-widest uppercase text-[#666]">
             Transfer Amount{' '}
-            <span className="text-slate-700 normal-case tracking-normal font-normal">/ Fiat equivalent</span>
+            <span className="text-[#444] normal-case tracking-normal font-normal">/ Fiat equivalent</span>
           </label>
           <div className="relative">
             <input
@@ -472,17 +472,17 @@ export default function ComplianceForm({ onResult, onLoadingChange }) {
               required
               disabled={loading}
               className="
-                w-full bg-[#111827]/60 border border-white/8 rounded-xl
+                w-full bg-[#111] border border-[#222] rounded-xl
                 px-4 py-3.5 pr-16 text-white font-mono text-lg font-semibold
-                placeholder-slate-700 outline-none transition-all duration-200
-                focus:border-[#6366f1]/60 focus:bg-[#6366f1]/5
+                placeholder-[#444] outline-none transition-all duration-200
+                focus:border-[#888] focus:bg-[#6366f1]/5
                 disabled:opacity-50
               "
               style={{ boxShadow: 'none' }}
               onFocus={e => e.target.style.boxShadow = '0 0 0 3px rgba(99,102,241,0.15)'}
               onBlur={e => e.target.style.boxShadow = 'none'}
             />
-            <span className="absolute right-4 top-1/2 -translate-y-1/2 text-[11px] font-mono font-bold text-slate-600 tracking-widest">
+            <span className="absolute right-4 top-1/2 -translate-y-1/2 text-[11px] font-mono font-bold text-[#555] tracking-widest">
               USD
             </span>
           </div>
@@ -490,7 +490,7 @@ export default function ComplianceForm({ onResult, onLoadingChange }) {
 
         {/* ── Available Compliance Evidence ── */}
         <div className="space-y-2.5">
-          <div className="text-[10px] font-bold tracking-widest uppercase text-slate-500">
+          <div className="text-[10px] font-bold tracking-widest uppercase text-[#666]">
             Available Compliance Evidence
           </div>
           <ToggleRow
@@ -533,16 +533,15 @@ export default function ComplianceForm({ onResult, onLoadingChange }) {
           id="run-compliance-btn"
           disabled={loading || !amount || parseFloat(amount) <= 0}
           className="
-            btn-shimmer relative w-full py-4 rounded-xl font-black text-sm
-            tracking-[0.15em] uppercase text-white overflow-hidden
+            relative w-full py-4 rounded-xl font-black text-sm
+            tracking-[0.15em] uppercase overflow-hidden
             transition-all duration-200
             disabled:opacity-50 disabled:cursor-not-allowed
           "
           style={{
-            background: loading
-              ? 'linear-gradient(135deg,#374151,#4b5563,#374151)'
-              : 'linear-gradient(135deg,#4f46e5,#6366f1,#7c3aed)',
-            boxShadow: (!loading && amount) ? '0 4px 24px rgba(99,102,241,0.35)' : 'none',
+            background: loading ? '#222' : '#fff',
+            color: loading ? '#666' : '#000',
+            boxShadow: (!loading && amount) ? '0 4px 24px rgba(255,255,255,0.1)' : 'none',
             transition: 'all 0.3s ease',
           }}
           onMouseEnter={e => { if (!loading && amount) e.currentTarget.style.transform = 'translateY(-2px)' }}
@@ -613,10 +612,10 @@ function ToggleRow({ id, label, sublabel, checked, onChange, disabled }) {
       </div>
 
       <div className="flex-1">
-        <div className={`text-sm font-semibold transition-colors ${checked ? 'text-white' : 'text-slate-400'}`}>
+        <div className={`text-sm font-semibold transition-colors ${checked ? 'text-white' : 'text-[#888]'}`}>
           {label}
         </div>
-        <div className="text-[11px] text-slate-600 mt-0.5">{sublabel}</div>
+        <div className="text-[11px] text-[#555] mt-0.5">{sublabel}</div>
       </div>
       <div
         className="text-xs font-mono font-bold px-2 py-0.5 rounded transition-all"

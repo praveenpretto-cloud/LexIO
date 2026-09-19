@@ -34,7 +34,7 @@ export default function PolicyStudio() {
           </p>
         </div>
         <div className="hidden md:flex items-center gap-2">
-          <span className="text-[11px] font-mono px-3 py-1.5 rounded-full border border-indigo-500/30 text-indigo-400 bg-indigo-500/10">
+          <span className="text-[11px] font-mono px-3 py-1.5 rounded-full border border-[#444] text-[#888] bg-[#111]">
             LexIO Compiler Active
           </span>
         </div>
@@ -83,7 +83,7 @@ export default function PolicyStudio() {
               </select>
             </div>
             
-            <button type="submit" className="w-full py-3 rounded-xl font-black text-xs tracking-widest uppercase text-white bg-indigo-600 hover:bg-indigo-500 transition-colors mt-2">
+            <button type="submit" className="w-full py-3 rounded-xl font-black text-xs tracking-widest uppercase text-black bg-white hover:bg-gray-200 transition-colors mt-2">
               + Deploy Rule to Engine
             </button>
           </form>
@@ -99,7 +99,7 @@ export default function PolicyStudio() {
               <div key={rule.id} className="flex flex-col md:flex-row md:items-center justify-between p-4 rounded-xl border border-white/5 bg-white/5 gap-4">
                 <div className="flex-1 font-mono text-xs">
                   <span className="text-slate-500">IF </span>
-                  <span className="text-indigo-300">{rule.condition}</span>
+                  <span className="text-[#888]">{rule.condition}</span>
                   <br className="md:hidden" />
                   <span className="text-slate-500"> THEN </span>
                   <span className="text-amber-400 font-bold">{rule.action}</span>

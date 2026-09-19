@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { createPortal } from 'react-dom'
 
 export default function TransactionModal({ transaction, onClose }) {
   const [copied, setCopied] = useState(false)
@@ -41,16 +42,16 @@ export default function TransactionModal({ transaction, onClose }) {
     }
   }
 
-  return (
+  return createPortal(
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm slide-up">
       <div 
-        className="w-full max-w-2xl bg-[#0d1220] border rounded-2xl shadow-2xl overflow-hidden flex flex-col"
+        className="w-full max-w-2xl bg-[#050505] border rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]"
         style={{
-          borderColor: isApprove ? 'rgba(16,185,129,0.2)' : 'rgba(244,63,94,0.2)'
+          borderColor: isApprove ? 'rgba(0,255,0,0.2)' : 'rgba(255,0,0,0.2)'
         }}
       >
         {/* Header */}
-        <div className="px-6 py-4 border-b border-white/5 flex items-center justify-between">
+        <div className="px-6 py-4 border-b border-[#222] flex items-center justify-between shrink-0">
           <div className="flex items-center gap-3">
             <h3 className="text-lg font-bold text-white tracking-wide">Transaction Details</h3>
             {transaction.network && (
@@ -68,58 +69,58 @@ export default function TransactionModal({ transaction, onClose }) {
           </div>
           <button 
             onClick={onClose}
-            className="text-slate-400 hover:text-white transition-colors text-xl font-bold"
+            className="text-[#666] hover:text-white transition-colors text-xl font-bold"
           >
             ✕
           </button>
         </div>
 
         {/* Body */}
-        <div className="p-6 flex flex-col gap-6">
+        <div className="p-6 flex flex-col gap-6 overflow-y-auto flex-1">
           <div className="grid grid-cols-2 gap-4 text-sm font-mono">
-            <div className="bg-white/5 p-4 rounded-xl border border-white/5">
-              <div className="text-[10px] uppercase text-slate-500 mb-1">Status</div>
-              <div style={{ color: isApprove ? '#34d399' : '#fb7185' }} className="font-bold">
+            <div className="bg-[#111] p-4 rounded-xl border border-[#222]">
+              <div className="text-[10px] uppercase text-[#666] mb-1">Status</div>
+              <div style={{ color: isApprove ? '#00FF00' : '#FF0000' }} className="font-bold">
                 {transaction.status}
               </div>
             </div>
-            <div className="bg-white/5 p-4 rounded-xl border border-white/5">
-              <div className="text-[10px] uppercase text-slate-500 mb-1">Amount</div>
+            <div className="bg-[#111] p-4 rounded-xl border border-[#222]">
+              <div className="text-[10px] uppercase text-[#666] mb-1">Amount</div>
               <div className="text-white">
                 {Number(transaction.amount || transaction._amount).toLocaleString()} {transaction.stablecoin_type || transaction._asset || 'USDC'}
               </div>
             </div>
           </div>
 
-          <div className="bg-white/5 p-4 rounded-xl border border-white/5">
-            <div className="text-[10px] uppercase text-slate-500 mb-2">Reason</div>
-            <div className="text-sm text-slate-300 font-mono leading-relaxed">
+          <div className="bg-[#111] p-4 rounded-xl border border-[#222]">
+            <div className="text-[10px] uppercase text-[#666] mb-2">Reason</div>
+            <div className="text-sm text-[#ccc] font-mono leading-relaxed whitespace-pre-wrap">
               {transaction.reason}
             </div>
           </div>
 
           {transaction.authorization_hash && (
             <div className="flex flex-col gap-2">
-              <div className="text-[10px] uppercase text-slate-500 font-bold tracking-widest">
+              <div className="text-[10px] uppercase text-[#666] font-bold tracking-widest">
                 Clearance Signature / Txn Hash
               </div>
               <div className="flex items-center gap-2">
-                <div className="flex-1 bg-black/40 border border-white/10 p-3 rounded-xl font-mono text-[11px] text-emerald-400/80 break-all select-all">
+                <div className="flex-1 bg-black border border-[#333] p-3 rounded-xl font-mono text-[11px] text-[#00FF00] break-all select-all">
                   {transaction.authorization_hash}
                 </div>
                 <button
                   onClick={handleCopy}
                   className="px-4 py-3 rounded-xl font-bold text-xs tracking-wider border transition-all"
                   style={{
-                    background: copied ? 'rgba(16,185,129,0.1)' : 'rgba(255,255,255,0.05)',
-                    borderColor: copied ? 'rgba(16,185,129,0.3)' : 'rgba(255,255,255,0.1)',
-                    color: copied ? '#34d399' : '#94a3b8'
+                    background: copied ? 'rgba(0,255,0,0.1)' : '#111',
+                    borderColor: copied ? 'rgba(0,255,0,0.3)' : '#333',
+                    color: copied ? '#00FF00' : '#888'
                   }}
                 >
                   {copied ? 'COPIED!' : 'COPY'}
                 </button>
               </div>
-              <div className="text-[10px] text-slate-500 italic mt-1">
+              <div className="text-[10px] text-[#555] italic mt-1">
                 (Note: Hash updates within 5 seconds once the network confirms the block).
               </div>
               {explorerUrl && (
@@ -142,6 +143,7 @@ export default function TransactionModal({ transaction, onClose }) {
           )}
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   )
 }

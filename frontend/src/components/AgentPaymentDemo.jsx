@@ -461,9 +461,10 @@ export default function AgentPaymentDemo() {
               id="run-agent-demo-btn"
               type="submit"
               disabled={loading || !sourceWallet || !destWallet}
-              className="relative w-full py-4 rounded-xl font-bold text-sm tracking-[0.1em] uppercase text-white overflow-hidden transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-blue-700"
+              className="relative w-full py-4 rounded-xl font-bold text-sm tracking-[0.1em] uppercase text-black bg-white overflow-hidden transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-200"
               style={{
-                background: loading ? '#334155' : '#2563EB',
+                background: loading ? '#222' : '#fff',
+                color: loading ? '#666' : '#000',
                 boxShadow: '0 4px 14px rgba(0,0,0,0.2)',
               }}
             >
@@ -493,7 +494,7 @@ export default function AgentPaymentDemo() {
 
         {/* Right — Magic Pipeline & Terminal */}
         <div className="flex flex-col gap-6">
-          <div className="glass-panel rounded-2xl p-6 border flex flex-col gap-6">
+          <div className="bg-[#050505] border-[#222] rounded-2xl p-6 border flex flex-col gap-6">
             <div className="text-[10px] font-bold tracking-widest uppercase text-slate-500 mb-2">
               Execution Pipeline
             </div>
@@ -507,7 +508,7 @@ export default function AgentPaymentDemo() {
                 <div className="absolute inset-0 bg-white/10" />
                 {/* Animated fill */}
                 <motion.div 
-                  className="absolute left-0 top-0 bottom-0 bg-indigo-500 origin-left"
+                  className="absolute left-0 top-0 bottom-0 bg-white origin-left"
                   initial={{ scaleX: 0 }}
                   animate={{ scaleX: loading ? (progressStep / 3) : result ? 1 : 0 }}
                   transition={{ duration: 0.8, ease: "easeInOut" }}
@@ -529,7 +530,7 @@ export default function AgentPaymentDemo() {
                     >
                       {isActive ? '✓' : i + 1}
                     </motion.div>
-                    <span className={`text-[9px] font-mono tracking-widest uppercase font-bold text-center w-20 leading-tight ${isActive ? 'text-indigo-400' : 'text-slate-500'}`}>
+                    <span className={`text-[9px] font-mono tracking-widest uppercase font-bold text-center w-20 leading-tight ${isActive ? 'text-[#00FF00]' : 'text-[#666]'}`}>
                       {node}
                     </span>
                   </div>
@@ -545,7 +546,7 @@ export default function AgentPaymentDemo() {
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              className="glass-panel-glow rounded-2xl p-6 border flex flex-col gap-4"
+              className="bg-[#000] border-[#222] rounded-2xl p-6 border flex flex-col gap-4"
             >
                <div className="flex items-center gap-4">
                   <div className="text-4xl">{DECISION_ICONS[decisionKey]}</div>
@@ -561,7 +562,7 @@ export default function AgentPaymentDemo() {
                  <div className="pt-4 border-t border-white/10 font-mono text-[10px] space-y-2">
                    <div className="flex justify-between text-slate-500">
                      <span>Chain Hash ({result.chain})</span>
-                     <span className="text-indigo-400 truncate w-32 text-right">{result.anchor_result.transaction_hash}</span>
+                     <span className="text-white truncate w-32 text-right">{result.anchor_result.transaction_hash}</span>
                    </div>
                    <div className="flex justify-between text-slate-500">
                      <span>VC Minted</span>
@@ -590,7 +591,7 @@ export default function AgentPaymentDemo() {
                      <div className="relative z-10 space-y-3">
                        {/* pi_a */}
                        <div>
-                         <span className="text-slate-500">const</span> <span className="text-purple-400">pi_a</span> <span className="text-slate-500">= [</span>
+                         <span className="text-[#666]">const</span> <span className="text-white">pi_a</span> <span className="text-[#666]">= [</span>
                          <div className="pl-4 text-emerald-300/80 break-all leading-tight">
                            "{result.credential.credentialSubject.zkProof.pi_a[0]}",<br/>
                            "{result.credential.credentialSubject.zkProof.pi_a[1]}"
@@ -600,7 +601,7 @@ export default function AgentPaymentDemo() {
                        
                        {/* pi_b */}
                        <div>
-                         <span className="text-slate-500">const</span> <span className="text-purple-400">pi_b</span> <span className="text-slate-500">= [</span>
+                         <span className="text-[#666]">const</span> <span className="text-white">pi_b</span> <span className="text-[#666]">= [</span>
                          <div className="pl-4 text-emerald-300/80 break-all leading-tight">
                            ["{result.credential.credentialSubject.zkProof.pi_b[0][0]}",<br/>
                             "{result.credential.credentialSubject.zkProof.pi_b[0][1]}"],<br/>
@@ -612,7 +613,7 @@ export default function AgentPaymentDemo() {
                        
                        {/* pi_c */}
                        <div>
-                         <span className="text-slate-500">const</span> <span className="text-purple-400">pi_c</span> <span className="text-slate-500">= [</span>
+                         <span className="text-[#666]">const</span> <span className="text-white">pi_c</span> <span className="text-[#666]">= [</span>
                          <div className="pl-4 text-emerald-300/80 break-all leading-tight">
                            "{result.credential.credentialSubject.zkProof.pi_c[0]}",<br/>
                            "{result.credential.credentialSubject.zkProof.pi_c[1]}"
@@ -658,7 +659,7 @@ export default function AgentPaymentDemo() {
             {!result && !loading ? (
               <div className="text-xs text-slate-700 font-mono italic">Run a transaction to see the raw API output...</div>
             ) : loading ? (
-              <div className="text-xs text-indigo-400 font-mono animate-pulse">Waiting for backend engine...</div>
+              <div className="text-xs text-[#666] font-mono animate-pulse">Waiting for backend engine...</div>
             ) : (
               <pre className="text-[10px] md:text-xs font-mono text-slate-300 whitespace-pre-wrap">
                 {JSON.stringify(result, null, 2)}

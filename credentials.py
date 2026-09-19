@@ -12,6 +12,7 @@ import json
 import secrets
 from datetime import datetime, timedelta, timezone
 from typing import Dict, Optional
+from pathlib import Path
 
 from xrpl.asyncio.clients import AsyncWebsocketClient
 from xrpl.asyncio.transaction import submit_and_wait
@@ -71,6 +72,14 @@ def _build_zk_commitment(wallet_address: str, risk_tier: str, issued_at: datetim
         raise RuntimeError(f"ZK Proof generation failed: {result.stderr or result.stdout}")
         
     proof_data = json.loads(result.stdout)
+    
+    # Save to static/zk for frontend download
+    zk_dir = Path(__file__).parent / "static" / "zk"
+    zk_dir.mkdir(parents=True, exist_ok=True)
+    with open(zk_dir / "proof.json", "w") as f:
+        json.dump(proof_data["proof"], f, indent=2)
+    with open(zk_dir / "public.json", "w") as f:
+        json.dump(proof_data["publicSignals"], f, indent=2)
     
     return {
         "id":               "did:zk:hidden",

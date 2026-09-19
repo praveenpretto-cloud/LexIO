@@ -347,12 +347,12 @@ async def compliance_history(
     db: AsyncSession = Depends(get_async_db),
 ):
     """Returns paginated compliance check history, ordered by most recent first."""
-    count_query = await db.execute(select(func.count()).select_from(AgentTransactionLog))
+    count_query = await db.execute(select(func.count()).select_from(TransactionLog))
     total = count_query.scalar_one()
 
     records_query = await db.execute(
-        select(AgentTransactionLog)
-        .order_by(AgentTransactionLog.checked_at.desc())
+        select(TransactionLog)
+        .order_by(TransactionLog.checked_at.desc())
         .offset(offset)
         .limit(limit)
     )
@@ -365,17 +365,68 @@ async def compliance_history(
         "records": [
             {
                 "id": r.id,
-                "amount": r.amount_usd,
-                "stablecoin_type": "USD",
-                "sender_address": r.source_wallet,
-                "receiver_address": r.destination_wallet,
-                "sender_jurisdiction": "AI-Checked",
-                "receiver_jurisdiction": "AI-Checked",
-                "status": r.decision,
-                "reason": "\n".join(json.loads(r.reasons_json)) if r.reasons_json else "Cleared",
-                "authorization_hash": "N/A - See DB",
-                "network": "Omni-chain",
+                "amount": r.amount,
+                "stablecoin_type": r.stablecoin_type,
+                "sender_address": r.sender_address,
+                "receiver_address": r.receiver_address,
+                "sender_jurisdiction": r.sender_jurisdiction,
+                "receiver_jurisdiction": r.receiver_jurisdiction,
+                "status": r.status,
+                "reason": r.reason,
+                "authorization_hash": r.authorization_hash,
+                "network": r.network,
                 "checked_at": r.checked_at.isoformat(),
+            }
+            for r in records
+        ],
+    }
+
+@app.get(
+    "/api/v1/agent/history",
+    tags=["Agentic Compliance"],
+    summary="Retrieve the agentic compliance audit log",
+)
+async def agent_compliance_history(
+    limit:  int = Query(default=50, ge=1, le=500, description="Max records to return"),
+    offset: int = Query(default=0,  ge=0,          description="Pagination offset"),
+):
+    """Returns paginated agentic compliance check history, ordered by most recent first."""
+    from sqlalchemy import func as sa_func
+    from db_models import AgentTransactionLog as ATL
+
+    async with AsyncSessionLocal() as session:
+        count_q = await session.execute(
+            select(sa_func.count()).select_from(ATL)
+        )
+        total = count_q.scalar_one()
+
+        records_q = await session.execute(
+            select(ATL)
+            .order_by(ATL.checked_at.desc())
+            .offset(offset)
+            .limit(limit)
+        )
+        records = records_q.scalars().all()
+
+    return {
+        "total":   total,
+        "offset":  offset,
+        "limit":   limit,
+        "records": [
+            {
+                "id":                  r.id,
+                "sender_address":      r.source_wallet,
+                "receiver_address":    r.destination_wallet,
+                "amount":              r.amount_usd,
+                "status":              r.decision,
+                "risk_tier":           r.risk_tier,
+                "network":             r.network,
+                "use_zk":              r.use_zk,
+                "authorization_hash":  r.authorization_hash,
+                "reason":              "\n".join(json.loads(r.reasons_json)) if r.reasons_json else "Cleared",
+                "confidence_score":    r.confidence_score,
+                "flagged_by":          json.loads(r.flagged_by_json or "[]"),
+                "checked_at":          r.checked_at.isoformat(),
             }
             for r in records
         ],
@@ -404,22 +455,6 @@ async def agent_compliance_check(request: AgentTransferRequest) -> ComplianceDec
     - **WATCH** (EDD tier) — high-risk jurisdiction; flag for human review.
     """
     decision: ComplianceDecision = await check_agentic_finance_compliance(request)
-
-    # Async audit log write
-    async with AsyncSessionLocal() as session:
-        log = AgentTransactionLog(
-            source_wallet=request.source_wallet_address,
-            destination_wallet=request.destination_wallet_address,
-            amount_usd=request.amount_usd,
-            decision=decision.decision,
-            risk_tier=decision.risk_tier.value,
-            reasons_json=json.dumps(decision.reasons),
-            confidence_score=decision.confidence_score,
-            flagged_by_json=json.dumps(decision.flagged_by),
-        )
-        session.add(log)
-        await session.commit()
-
     return decision
 
 
@@ -515,6 +550,24 @@ async def demo_agent_payment(
                 xrpl_secret=XRPL_ISSUER_SECRET,
             )
 
+        # Save to DB
+        async with AsyncSessionLocal() as session:
+            log = AgentTransactionLog(
+                source_wallet=source_wallet,
+                destination_wallet=destination_wallet,
+                amount_usd=amount,
+                decision=decision.decision,
+                risk_tier=decision.risk_tier.value,
+                network=chain,
+                use_zk=use_zk,
+                authorization_hash=anchor_result.get("transaction_hash"),
+                reasons_json=json.dumps(decision.reasons),
+                confidence_score=decision.confidence_score,
+                flagged_by_json=json.dumps(decision.flagged_by),
+            )
+            session.add(log)
+            await session.commit()
+
         return {
             "payment_id":          str(uuid.uuid4()),
             "source_wallet":       source_wallet,
@@ -547,6 +600,24 @@ async def demo_agent_payment(
                 reason=reason_text,
             )
 
+        # Save to DB
+        async with AsyncSessionLocal() as session:
+            log = AgentTransactionLog(
+                source_wallet=source_wallet,
+                destination_wallet=destination_wallet,
+                amount_usd=amount,
+                decision=decision.decision,
+                risk_tier=decision.risk_tier.value,
+                network=chain,
+                use_zk=use_zk,
+                authorization_hash=escrow_result.get("transaction_hash"),
+                reasons_json=json.dumps(decision.reasons),
+                confidence_score=decision.confidence_score,
+                flagged_by_json=json.dumps(decision.flagged_by),
+            )
+            session.add(log)
+            await session.commit()
+
         return {
             "payment_id":          str(uuid.uuid4()),
             "source_wallet":       source_wallet,
@@ -559,6 +630,24 @@ async def demo_agent_payment(
             "timestamp":           now.isoformat(),
         }
     else:
+        # Save to DB
+        async with AsyncSessionLocal() as session:
+            log = AgentTransactionLog(
+                source_wallet=source_wallet,
+                destination_wallet=destination_wallet,
+                amount_usd=amount,
+                decision=decision.decision,
+                risk_tier=decision.risk_tier.value,
+                network=chain,
+                use_zk=use_zk,
+                authorization_hash=None,
+                reasons_json=json.dumps(decision.reasons),
+                confidence_score=decision.confidence_score,
+                flagged_by_json=json.dumps(decision.flagged_by),
+            )
+            session.add(log)
+            await session.commit()
+
         return {
             "payment_id":          str(uuid.uuid4()),
             "source_wallet":       source_wallet,
@@ -570,52 +659,3 @@ async def demo_agent_payment(
             "chain":               chain,
             "timestamp":           now.isoformat(),
         }
-
-
-@app.get(
-    "/api/v1/agent/history",
-    tags=["Agentic Compliance"],
-    summary="Retrieve the agentic compliance audit log",
-)
-async def agent_compliance_history(
-    limit:  int = Query(default=50, ge=1, le=500, description="Max records to return"),
-    offset: int = Query(default=0,  ge=0,          description="Pagination offset"),
-):
-    """Returns paginated agentic compliance check history, ordered by most recent first."""
-    from sqlalchemy import func as sa_func
-    from db_models import AgentTransactionLog as ATL
-
-    async with AsyncSessionLocal() as session:
-        count_q = await session.execute(
-            select(sa_func.count()).select_from(ATL)
-        )
-        total = count_q.scalar_one()
-
-        records_q = await session.execute(
-            select(ATL)
-            .order_by(ATL.checked_at.desc())
-            .offset(offset)
-            .limit(limit)
-        )
-        records = records_q.scalars().all()
-
-    return {
-        "total":   total,
-        "offset":  offset,
-        "limit":   limit,
-        "records": [
-            {
-                "id":                  r.id,
-                "source_wallet":       r.source_wallet,
-                "destination_wallet":  r.destination_wallet,
-                "amount_usd":          r.amount_usd,
-                "decision":            r.decision,
-                "risk_tier":           r.risk_tier,
-                "reasons":             json.loads(r.reasons_json or "[]"),
-                "confidence_score":    r.confidence_score,
-                "flagged_by":          json.loads(r.flagged_by_json or "[]"),
-                "checked_at":          r.checked_at.isoformat(),
-            }
-            for r in records
-        ],
-    }

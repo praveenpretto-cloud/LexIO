@@ -8,17 +8,17 @@ function highlight(json) {
   if (!json) return ''
   return json
     .replace(/(\"(\\u[a-zA-Z0-9]{4}|\\[^u]|[^\\"])*\"(\s*:)?|\b(true|false|null)\b|-?\d+(?:\.\d*)?(?:[eE][+\-]?\d+)?)/g, (match) => {
-      let cls = 'text-[#a5b4fc]'         // number default (purple)
+      let cls = 'text-[#ccc]'         // number default (grey)
       if (/^"/.test(match)) {
         if (/:$/.test(match)) {
-          cls = 'text-[#7dd3fc]'         // key (sky blue)
+          cls = 'text-[#888]'         // key (dark grey)
         } else {
-          cls = 'text-[#86efac]'         // string value (green)
+          cls = 'text-[#00FF00]'         // string value (green)
         }
       } else if (/true|false/.test(match)) {
-        cls = 'text-[#fbbf24]'           // boolean (amber)
+        cls = 'text-[#fff]'           // boolean (white)
       } else if (/null/.test(match)) {
-        cls = 'text-[#f87171]'           // null (red)
+        cls = 'text-[#FF0000]'           // null (red)
       }
       return `<span class="${cls}">${match}</span>`
     })
