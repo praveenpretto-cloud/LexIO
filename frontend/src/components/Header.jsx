@@ -1,62 +1,30 @@
-import { useEffect, useState } from 'react'
-
-export default function Header({ checkCount }) {
-  const [tick, setTick] = useState(new Date().toISOString())
-
-  useEffect(() => {
-    const t = setInterval(() => setTick(new Date().toISOString()), 1000)
-    return () => clearInterval(t)
-  }, [])
-
+export default function Header({ checkCount, tabs, activeTab, onTabChange }) {
   return (
-    <header className="relative z-10 border-b border-[#222] bg-[#000000] backdrop-blur-sm">
-      <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
-
-        {/* Logo */}
-        <div className="flex items-center gap-3">
-          <div
-            className="w-9 h-9 rounded-xl flex items-center justify-center text-lg border border-[#333]"
-            style={{ background: '#111', boxShadow: 'none' }}
-          >
-            ⚖
-          </div>
+    <header className="border-b border-neutral-200 bg-white">
+      <div className="max-w-5xl mx-auto px-6 h-14 flex items-center justify-between gap-6">
+        <div className="flex items-center gap-8">
           <div>
-            <div className="font-black text-xl tracking-tight text-white">
-              Lex<span className="text-[#888]">IO</span>
-            </div>
-            <div className="text-[10px] text-slate-500 font-mono tracking-widest uppercase">
-              Agentic Compliance Engine v2.0
-            </div>
+            <div className="text-sm font-semibold tracking-tight">LexIO</div>
+            <div className="text-[11px] text-neutral-500">Policy engine 0.1.0</div>
           </div>
+          <nav className="flex gap-1">
+            {tabs.map((tab) => (
+              <button
+                key={tab.key}
+                type="button"
+                onClick={() => onTabChange(tab.key)}
+                className={`px-3 py-1.5 text-sm rounded-md ${
+                  activeTab === tab.key
+                    ? 'bg-neutral-900 text-white'
+                    : 'text-neutral-600 hover:bg-neutral-100'
+                }`}
+              >
+                {tab.label}
+              </button>
+            ))}
+          </nav>
         </div>
-
-        {/* Center pack version tags */}
-        <div className="hidden md:flex items-center gap-3">
-          <div className="h-px w-8 bg-[#333]" />
-          {['FATF Risk Pack v1.0', 'Omni-Chain Pack v2.0', 'W3C Cred Pack v1.1'].map((tag, i) => (
-            <span
-              key={tag}
-              className="text-[10px] font-mono px-2.5 py-1 rounded-full border text-[#888] tracking-wider bg-[#111] border-[#333]"
-            >
-              {tag}
-            </span>
-          ))}
-          <div className="h-px w-8 bg-[#333]" />
-        </div>
-
-        {/* Right meta */}
-        <div className="flex items-center gap-3 text-xs font-mono">
-          <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/20">
-            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-            <span className="text-emerald-400 font-semibold">LIVE</span>
-          </div>
-          <div className="hidden sm:block text-slate-600">
-            {tick.replace('T', ' ').slice(0, 19)} UTC
-          </div>
-          <div className="px-2.5 py-1 rounded-lg bg-[#111] border border-[#333] text-white font-semibold">
-            {checkCount} checks
-          </div>
-        </div>
+        <div className="text-xs text-neutral-500 tabular-nums">{checkCount} checks</div>
       </div>
     </header>
   )

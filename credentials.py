@@ -99,7 +99,7 @@ def _build_zk_commitment(wallet_address: str, risk_tier: str, issued_at: datetim
             "vkey_url":      "https://lexio.io/zk/vkey.json",
             "note":          "Verify with: snarkjs groth16 verify vkey.json publicSignals.json proof.json",
         },
-        "issuedBy": "LexIO ZK-Compliance Engine v2.0",
+        "issuedBy": "LexIO 0.1.0",
     }
 
 
@@ -177,7 +177,7 @@ class VerifiableCredential:
             "id":               f"xrpl:{self.wallet_address}",
             "riskTier":         self.risk_tier.upper(),
             "complianceStatus": "cleared",
-            "issuedBy":         "LexIO Agentic Compliance Engine v2.0",
+            "issuedBy":         "LexIO 0.1.0",
         }
 
     def to_json_string(self) -> str:

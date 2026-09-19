@@ -1,10 +1,19 @@
 import { useEffect, useState } from 'react'
 import { createPortal } from 'react-dom'
 
+const CHAIN_META = {
+  xrpl: { name: 'XRPL Testnet', explorer: (hash) => `https://testnet.xrpl.org/transactions/${hash}` },
+  ethereum: { name: 'Sepolia', explorer: (hash) => `https://sepolia.etherscan.io/tx/${hash}` },
+  solana: { name: 'Solana Devnet', explorer: (hash) => `https://explorer.solana.com/tx/${hash}?cluster=devnet` },
+  base: { name: 'Base Sepolia', explorer: (hash) => `https://sepolia.basescan.org/tx/${hash}` },
+  polygon: { name: 'Polygon Amoy', explorer: (hash) => `https://amoy.polygonscan.com/tx/${hash}` },
+  arbitrum: { name: 'Arbitrum Sepolia', explorer: (hash) => `https://sepolia.arbiscan.io/tx/${hash}` },
+  aptos: { name: 'Aptos Devnet', explorer: (hash) => `https://explorer.aptoslabs.com/txn/${hash}?network=devnet` },
+}
+
 export default function TransactionModal({ transaction, onClose }) {
   const [copied, setCopied] = useState(false)
 
-  // Close on Escape key
   useEffect(() => {
     const handleEsc = (e) => {
       if (e.key === 'Escape') onClose()
@@ -16,23 +25,12 @@ export default function TransactionModal({ transaction, onClose }) {
   if (!transaction) return null
 
   const isApprove = transaction.status?.toUpperCase() === 'APPROVE'
-
-  const CHAIN_META = {
-    xrpl:     { label: '◈ XRPL',     color: '#818cf8', name: 'XRPL Testnet',  explorer: (hash) => `https://testnet.xrpl.org/transactions/${hash}` },
-    ethereum: { label: '⟠ Ethereum', color: '#627eea', name: 'Sepolia Etherscan', explorer: (hash) => `https://sepolia.etherscan.io/tx/${hash}` },
-    solana:   { label: '◎ Solana',   color: '#14f195', name: 'Solana Devnet', explorer: (hash) => `https://explorer.solana.com/tx/${hash}?cluster=devnet` },
-    base:     { label: '🔵 Base',     color: '#0052ff', name: 'Base Sepolia',  explorer: (hash) => `https://sepolia.basescan.org/tx/${hash}` },
-    polygon:  { label: '⬡ Polygon',  color: '#8247e5', name: 'Polygon Amoy',  explorer: (hash) => `https://amoy.polygonscan.com/tx/${hash}` },
-    arbitrum: { label: '🔷 Arbitrum', color: '#28a0f0', name: 'Arbiscan Sepolia', explorer: (hash) => `https://sepolia.arbiscan.io/tx/${hash}` },
-    aptos:    { label: '🅰 Aptos',    color: '#2dd8a7', name: 'Aptos Devnet',  explorer: (hash) => `https://explorer.aptoslabs.com/txn/${hash}?network=devnet` },
-  }
-
   const networkKey = transaction.network?.toLowerCase() || 'xrpl'
   const meta = CHAIN_META[networkKey] || CHAIN_META.xrpl
-
-  const explorerUrl = transaction.authorization_hash && !transaction.authorization_hash.startsWith('SIM_')
-    ? meta.explorer(transaction.authorization_hash)
-    : null
+  const explorerUrl =
+    transaction.authorization_hash && !transaction.authorization_hash.startsWith('SIM_')
+      ? meta.explorer(transaction.authorization_hash)
+      : null
 
   const handleCopy = () => {
     if (transaction.authorization_hash) {
@@ -43,107 +41,47 @@ export default function TransactionModal({ transaction, onClose }) {
   }
 
   return createPortal(
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm slide-up">
-      <div 
-        className="w-full max-w-2xl bg-[#050505] border rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]"
-        style={{
-          borderColor: isApprove ? 'rgba(0,255,0,0.2)' : 'rgba(255,0,0,0.2)'
-        }}
-      >
-        {/* Header */}
-        <div className="px-6 py-4 border-b border-[#222] flex items-center justify-between shrink-0">
-          <div className="flex items-center gap-3">
-            <h3 className="text-lg font-bold text-white tracking-wide">Transaction Details</h3>
-            {transaction.network && (
-              <span
-                className="text-[10px] font-bold px-2 py-0.5 rounded-full border tracking-widest uppercase"
-                style={{
-                  background: `${meta.color}15`,
-                  borderColor: `${meta.color}30`,
-                  color: meta.color,
-                }}
-              >
-                {meta.label}
-              </span>
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40" onClick={onClose}>
+      <div className="w-full max-w-lg bg-white border border-neutral-200 p-5 max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="text-sm font-semibold">Transaction</h3>
+          <button type="button" className="btn" onClick={onClose}>Close</button>
+        </div>
+        <dl className="grid grid-cols-2 gap-3 text-sm mb-4">
+          <div>
+            <dt className="field-label">Status</dt>
+            <dd className={isApprove ? 'status-approve' : 'status-reject'}>{transaction.status}</dd>
+          </div>
+          <div>
+            <dt className="field-label">Amount</dt>
+            <dd className="font-mono">
+              {Number(transaction.amount || transaction._amount).toLocaleString()}{' '}
+              {transaction.stablecoin_type || transaction._asset || 'USDC'}
+            </dd>
+          </div>
+        </dl>
+        <div className="field-label">Reason</div>
+        <p className="text-sm text-neutral-800 mb-4 whitespace-pre-wrap">{transaction.reason}</p>
+        {transaction.authorization_hash && (
+          <div>
+            <div className="field-label">Hash</div>
+            <div className="flex gap-2">
+              <div className="flex-1 font-mono text-xs break-all border border-neutral-200 p-2 bg-neutral-50">
+                {transaction.authorization_hash}
+              </div>
+              <button type="button" className="btn shrink-0" onClick={handleCopy}>
+                {copied ? 'Copied' : 'Copy'}
+              </button>
+            </div>
+            {explorerUrl && (
+              <a className="inline-block mt-3 text-sm" href={explorerUrl} target="_blank" rel="noopener noreferrer">
+                View on {meta.name}
+              </a>
             )}
           </div>
-          <button 
-            onClick={onClose}
-            className="text-[#666] hover:text-white transition-colors text-xl font-bold"
-          >
-            ✕
-          </button>
-        </div>
-
-        {/* Body */}
-        <div className="p-6 flex flex-col gap-6 overflow-y-auto flex-1">
-          <div className="grid grid-cols-2 gap-4 text-sm font-mono">
-            <div className="bg-[#111] p-4 rounded-xl border border-[#222]">
-              <div className="text-[10px] uppercase text-[#666] mb-1">Status</div>
-              <div style={{ color: isApprove ? '#00FF00' : '#FF0000' }} className="font-bold">
-                {transaction.status}
-              </div>
-            </div>
-            <div className="bg-[#111] p-4 rounded-xl border border-[#222]">
-              <div className="text-[10px] uppercase text-[#666] mb-1">Amount</div>
-              <div className="text-white">
-                {Number(transaction.amount || transaction._amount).toLocaleString()} {transaction.stablecoin_type || transaction._asset || 'USDC'}
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-[#111] p-4 rounded-xl border border-[#222]">
-            <div className="text-[10px] uppercase text-[#666] mb-2">Reason</div>
-            <div className="text-sm text-[#ccc] font-mono leading-relaxed whitespace-pre-wrap">
-              {transaction.reason}
-            </div>
-          </div>
-
-          {transaction.authorization_hash && (
-            <div className="flex flex-col gap-2">
-              <div className="text-[10px] uppercase text-[#666] font-bold tracking-widest">
-                Clearance Signature / Txn Hash
-              </div>
-              <div className="flex items-center gap-2">
-                <div className="flex-1 bg-black border border-[#333] p-3 rounded-xl font-mono text-[11px] text-[#00FF00] break-all select-all">
-                  {transaction.authorization_hash}
-                </div>
-                <button
-                  onClick={handleCopy}
-                  className="px-4 py-3 rounded-xl font-bold text-xs tracking-wider border transition-all"
-                  style={{
-                    background: copied ? 'rgba(0,255,0,0.1)' : '#111',
-                    borderColor: copied ? 'rgba(0,255,0,0.3)' : '#333',
-                    color: copied ? '#00FF00' : '#888'
-                  }}
-                >
-                  {copied ? 'COPIED!' : 'COPY'}
-                </button>
-              </div>
-              <div className="text-[10px] text-[#555] italic mt-1">
-                (Note: Hash updates within 5 seconds once the network confirms the block).
-              </div>
-              {explorerUrl && (
-                <a
-                  href={explorerUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center gap-2 text-[11px] font-mono font-bold px-4 py-2 rounded-xl border transition-all hover:scale-[1.02]"
-                  style={{
-                    background: `${meta.color}10`,
-                    borderColor: `${meta.color}30`,
-                    color: meta.color,
-                  }}
-                >
-                  <span>↗</span>
-                  View on {meta.name}
-                </a>
-              )}
-            </div>
-          )}
-        </div>
+        )}
       </div>
     </div>,
-    document.body
+    document.body,
   )
 }

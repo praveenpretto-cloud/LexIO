@@ -55,35 +55,16 @@ MEDIUM_RISK_JURISDICTIONS: List[str] = [
     "NG",  # Nigeria
 ]
 
-# Mock PEP list — key is the owner_name field in MOCK_WALLET_OWNERSHIP
+# Fixture lists — not a live SDN/PEP feed.
 PEP_LIST: Dict[str, Dict] = {
-    "vladimir_putin":       {"country": "RU", "reason": "Head of State"},
-    "ali_khamenei":         {"country": "IR", "reason": "Supreme Leader"},
-    "bashar_al_assad":      {"country": "SY", "reason": "Head of State"},
-    "kim_jong_un":          {"country": "KP", "reason": "Supreme Leader"},
-    "lukashenko_alexander": {"country": "BY", "reason": "Head of State"},
-    "nicolas_maduro":       {"country": "VE", "reason": "Head of State"},
-    "miguel_diaz_canel":    {"country": "CU", "reason": "Head of State"},
-    "omar_al_bashir":       {"country": "SD", "reason": "Former Head of State — ICC warrant"},
-    "gurbanguly_berdimuhamedow": {"country": "TM", "reason": "Former Head of State"},
-    "qasem_soleimani":      {"country": "IR", "reason": "IRGC Commander — OFAC SDN"},
-    "semyon_mogilevich":    {"country": "RU", "reason": "Organised crime — FBI wanted"},
-    "evgeny_prigozhin":     {"country": "RU", "reason": "Wagner Group — OFAC SDN"},
-    "hunter_renfrew":       {"country": "KY", "reason": "Mock offshore PEP — demo only"},
-    "dragon_zhang_wei":     {"country": "KP", "reason": "Mock DPRK sanctions evader — demo only"},
-    "cayman_fund_admin":    {"country": "KY", "reason": "Mock opaque ownership structure — demo only"},
+    "pep_001": {"country": "RU", "reason": "Fixture PEP"},
+    "pep_002": {"country": "RU", "reason": "Fixture PEP"},
+    "pep_003": {"country": "IR", "reason": "Fixture PEP"},
 }
 
-# Mock sanctions list — key is owner_name
 SANCTIONS_LIST: Dict[str, Dict] = {
-    "north_korea_bank":        {"country": "KP", "reason": "OFAC SDN — DPRK state bank"},
-    "iran_petrochemical_co":   {"country": "IR", "reason": "OFAC SDN — IRGC linked"},
-    "syria_central_bank":      {"country": "SY", "reason": "EU/US sanctions — Assad regime"},
-    "wagner_group_finance":    {"country": "RU", "reason": "OFAC SDN — mercenary financing"},
-    "tornado_cash_deployer":   {"country": "US", "reason": "OFAC SDN — DPRK mixer"},
-    "lazarus_group_wallet":    {"country": "KP", "reason": "OFAC SDN — DPRK state hacker"},
-    "hamas_charity_front":     {"country": "PS", "reason": "OFAC SDN — terrorist financing"},
-    "cartago_exchange":        {"country": "VE", "reason": "OFAC SDN — Maduro regime exchange"},
+    "sdn_001": {"country": "KP", "reason": "Fixture SDN"},
+    "sdn_002": {"country": "KP", "reason": "Fixture SDN"},
 }
 
 # Maps wallet address → {owner_name, jurisdiction}
@@ -95,13 +76,11 @@ MOCK_WALLET_OWNERSHIP: Dict[str, Dict] = {
     "rEGcPEhZbvFMr14wBhm3TUc1EanWWMU367":         {"owner_name": "dave_clean",              "jurisdiction": "JP"},
     "GDHR3WJVS3IM5U7DFC3CBFMXPVLXA254MCLJRSJVHUR5BTHA2XJ7YHOZ": {"owner_name": "stellar_clean_sender", "jurisdiction": "US"},
     "GB3ST5WM4RBIOTBHS4GUUFH6VN5FEMVFZKAMVXRLL4D55DVQVKG7X66E": {"owner_name": "stellar_clean_rcv",    "jurisdiction": "AU"},
-    # PEP wallets
-    "rU6K7V8oST9vMN2pQr4sT5uV6wX7yZ8aA":         {"owner_name": "vladimir_putin",          "jurisdiction": "RU"},
-    "rPqq3gQJ5M7nOpKlM9pQr2sT3uV4wXyZa":         {"owner_name": "evgeny_prigozhin",        "jurisdiction": "RU"},
-    "rIranWalletMockXxXxXxXxXxXxXxXxXx":         {"owner_name": "ali_khamenei",            "jurisdiction": "IR"},
-    # Sanctions wallets
-    "rSanctionWalletNorthKoreaXxXxXxXx":         {"owner_name": "north_korea_bank",        "jurisdiction": "KP"},
-    "rLazarusGroupWalletXxXxXxXxXxXxXx":         {"owner_name": "lazarus_group_wallet",    "jurisdiction": "KP"},
+    "rU6K7V8oST9vMN2pQr4sT5uV6wX7yZ8aA":         {"owner_name": "pep_001",                 "jurisdiction": "RU"},
+    "rPqq3gQJ5M7nOpKlM9pQr2sT3uV4wXyZa":         {"owner_name": "pep_002",                 "jurisdiction": "RU"},
+    "rIranWalletMockXxXxXxXxXxXxXxXxXx":         {"owner_name": "pep_003",                 "jurisdiction": "IR"},
+    "rSanctionWalletNorthKoreaXxXxXxXx":         {"owner_name": "sdn_001",                 "jurisdiction": "KP"},
+    "rLazarusGroupWalletXxXxXxXxXxXxXx":         {"owner_name": "sdn_002",                 "jurisdiction": "KP"},
     # High-risk jurisdiction (not PEP/sanctioned, but EDD)
     "rHighRiskCountryWalletXxXxXxXxXx":          {"owner_name": "myanmar_entity",          "jurisdiction": "MM"},
     "rAfghanistanWalletXxXxXxXxXxXxXx":          {"owner_name": "afghan_merchant",         "jurisdiction": "AF"},
@@ -111,7 +90,7 @@ MOCK_WALLET_OWNERSHIP: Dict[str, Dict] = {
     # ── Solana wallets (base58) ──────────────────────────────────────────────
     "7xKXtg2CW87d97TXJSDpbD5jBkheTqA83TZRuJosgAsU": {"owner_name": "sol_clean_sender",   "jurisdiction": "US"},
     "DRpbCBMxVnDK7maPM5tGv6MvB3v1sRMC86PZ8okm21hy": {"owner_name": "sol_clean_receiver",  "jurisdiction": "DE"},
-    "HN7cABqLq46Es1jh92dQQisAq662SmxELLLsHHe4YWrH": {"owner_name": "sol_pep_wallet",      "jurisdiction": "RU"},
+    "HN7cABqLq46Es1jh92dQQisAq662SmxELLLsHHe4YWrH": {"owner_name": "pep_001",            "jurisdiction": "RU"},
     # ── EVM wallets (0x) — shared across Ethereum, Base, Polygon, Arbitrum ──
     "0x742d35Cc6634C0532925a3b844Bc9e7595f2bD18":    {"owner_name": "evm_clean_sender",    "jurisdiction": "US"},
     "0x53d284357EC70cE289D6D64134DfAc8E511c8a3D":    {"owner_name": "evm_clean_receiver",  "jurisdiction": "GB"},

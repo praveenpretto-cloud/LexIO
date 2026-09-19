@@ -7,8 +7,8 @@ async def main():
         # Check OpenAPI metadata
         r = await client.get("http://localhost:8000/openapi.json")
         data = r.json()
-        assert data["info"]["title"] == "LexIO Regulatory Compiler API"
-        assert data["info"]["version"] == "1.0.0"
+        assert data["info"]["title"] == "LexIO API"
+        assert data["info"]["version"] == "0.1.0"
         
         # Batch Latency Test
         times = []

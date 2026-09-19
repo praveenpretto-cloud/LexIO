@@ -1,15 +1,4 @@
-"""
-main.py — FastAPI application entry point for the LexIO Agentic Compliance Engine.
-v2.0 additions:
-  - Agentic compliance check endpoint (SCDD/CDD/EDD risk-tier scoring)
-  - W3C Verifiable Credential issuance on APPROVE decisions
-  - XRPL memo anchoring for tamper-evident credential storage
-  - Full demo endpoint: /api/v1/demo/agent-payment
-Preserved from v1.1:
-  - Async SQLite audit logging via aiosqlite
-  - Global exception handlers (400 / 422 / 500 structured envelopes)
-  - X-Process-Time performance observability header
-"""
+"""LexIO API — policy check, optional Groth16 proof, testnet execution."""
 import json
 import os
 import time
@@ -44,8 +33,6 @@ from models import (
     ComplianceResponse,
     RiskTier,
 )
-from stellar_client import execute_stellar_transfer
-from xrpl_client import execute_xrpl_transfer
 from xrpl_escrow import create_compliance_escrow
 from ai_agent import generate_compliance_reasoning
 from chains import get_chain, list_chains
@@ -78,14 +65,14 @@ async def lifespan(app: FastAPI):
 # FastAPI app
 # ---------------------------------------------------------------------------
 app = FastAPI(
-    title="LexIO Regulatory Compiler API",
+    title="LexIO API",
     description=(
-        "Evaluates cryptocurrency transfers against **MAS PSN02** (Singapore) "
-        "and **EU MiCA / Transfer of Funds Regulation** rules. "
-        "Every decision is persisted to a local SQLite audit log."
+        "Evaluates a transfer against MAS PSN02, EU MiCA/TFR, and US GENIUS Act "
+        "gates, writes the decision to SQLite, and can attach a Groth16 proof of "
+        "the committed inputs. Screening lists are fixtures. Chains are testnets."
     ),
-    version="1.0.0",
-    contact={"name": "LexIO Compliance Team", "email": "compliance@lexio.io"},
+    version="0.1.0",
+    contact={"name": "LexIO", "email": "praveenpretto@gmail.com"},
     license_info={"name": "MIT"},
     lifespan=lifespan,
 )
@@ -228,13 +215,9 @@ async def _execute_and_update_db(
     chain_id = _NETWORK_TO_CHAIN_ID.get(network, network.lower())
     adapter = get_chain(chain_id)
 
-    if adapter:
-        ledger_hash = await adapter.execute_transfer(sender_secret, receiver_pub, amount)
-    elif network == "XRPL":
-        # Fallback to legacy direct imports
-        ledger_hash = await execute_xrpl_transfer(sender_secret, receiver_pub, amount)
-    else:
-        ledger_hash = await execute_stellar_transfer(sender_secret, receiver_pub, amount)
+    if adapter is None:
+        return
+    ledger_hash = await adapter.execute_transfer(sender_secret, receiver_pub, amount)
 
     async with AsyncSessionLocal() as session:
         log_entry = await session.get(TransactionLog, log_id)
@@ -258,7 +241,7 @@ def root():
 @app.get("/api/health", tags=["System Health"], summary="Check API health status")
 async def health_check():
     """Returns the operational status of the LexIO API."""
-    return {"status": "ok", "version": "2.0.0"}
+    return {"status": "ok", "version": "0.1.0"}
 
 
 @app.get(
@@ -481,7 +464,7 @@ async def demo_agent_payment(
     4. On-chain anchor on the selected chain (if APPROVE)
     5. On-chain escrow on the selected chain (if WATCH)
 
-    Supports all 8 chains: xrpl, stellar, ethereum, solana, base, polygon, arbitrum, aptos.
+    Testnet adapters: xrpl, stellar, ethereum, solana, base, polygon, arbitrum, aptos.
     """
     request = AgentTransferRequest(
         source_wallet_address=source_wallet,

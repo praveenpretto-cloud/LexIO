@@ -13,44 +13,44 @@ export default function ComplianceForm({ onResult, onLoadingChange }) {
     XRPL: {
       sender:   'rapGvMNARmA46HRNoGBiTy1nEwiKdVTfPw',
       receiver: 'rEGcPEhZbvFMr14wBhm3TUc1EanWWMU367',
-      label:    '◈ XRPL',
-      sublabel: 'Ripple Altnet · XRP · ~4s finality',
+      label:    'XRPL',
+      sublabel: 'Testnet',
     },
     Ethereum: {
       sender:   '0x742d35Cc6634C0532925a3b844Bc9e7595f2bD18',
       receiver: '0x53d284357EC70cE289D6D64134DfAc8E511c8a3D',
-      label:    '⟠ Ethereum',
-      sublabel: 'Sepolia · ETH · ~12s finality',
+      label:    'Ethereum',
+      sublabel: 'Sepolia',
     },
     Solana: {
       sender:   '7xKXtg2CW87d97TXJSDpbD5jBkheTqA83TZRuJosgAsU',
       receiver: 'DRpbCBMxVnDK7maPM5tGv6MvB3v1sRMC86PZ8okm21hy',
-      label:    '◎ Solana',
-      sublabel: 'Devnet · SOL · ~400ms finality',
+      label:    'Solana',
+      sublabel: 'Devnet',
     },
     Base: {
       sender:   '0x742d35Cc6634C0532925a3b844Bc9e7595f2bD18',
       receiver: '0x53d284357EC70cE289D6D64134DfAc8E511c8a3D',
-      label:    '🔵 Base',
-      sublabel: 'Sepolia · ETH · ~2s finality',
+      label:    'Base',
+      sublabel: 'Sepolia',
     },
     Polygon: {
       sender:   '0x742d35Cc6634C0532925a3b844Bc9e7595f2bD18',
       receiver: '0x53d284357EC70cE289D6D64134DfAc8E511c8a3D',
-      label:    '⬡ Polygon',
-      sublabel: 'Amoy · POL · ~2s finality',
+      label:    'Polygon',
+      sublabel: 'Amoy',
     },
     Arbitrum: {
       sender:   '0x742d35Cc6634C0532925a3b844Bc9e7595f2bD18',
       receiver: '0x53d284357EC70cE289D6D64134DfAc8E511c8a3D',
-      label:    '🔷 Arbitrum',
-      sublabel: 'Sepolia · ETH · ~250ms finality',
+      label:    'Arbitrum',
+      sublabel: 'Sepolia',
     },
     Aptos: {
       sender:   '0x1a2b3c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d9e0f1a2b',
       receiver: '0xa1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1d2e3f4a5b6c7d8e9f0a1b2',
-      label:    '🅰 Aptos',
-      sublabel: 'Devnet · APT · ~1s finality',
+      label:    'Aptos',
+      sublabel: 'Devnet',
     },
   }
 
@@ -138,12 +138,6 @@ export default function ComplianceForm({ onResult, onLoadingChange }) {
       // Build enriched response to match new format for inspector display
       const enrichedResponse = {
         decision: data.status?.toUpperCase() === 'APPROVE' ? 'approved' : 'rejected',
-        risk: data.status?.toUpperCase() === 'APPROVE' ? 'low' : 'high',
-        policy_packs: ['MAS Pack v0.9.2', 'MiCA Pack v1.0.1', 'GENIUS Act Pack v1.0'],
-        rules_triggered: ['MAS-PSN02', 'MiCA-14', 'US-GENIUS'],
-        obligations: data.status?.toUpperCase() === 'APPROVE'
-          ? ['Travel Rule Required', 'Record Retention']
-          : [],
         reason: data.reason,
         status: data.status,
         authorization_hash: data.authorization_hash,
@@ -193,25 +187,13 @@ export default function ComplianceForm({ onResult, onLoadingChange }) {
   }
 
   return (
-    <div className="bg-[#050505] border border-[#222] rounded-2xl p-6 backdrop-blur-sm flex flex-col gap-5">
+    <div className="panel flex flex-col gap-5">
 
-      {/* Panel header */}
-      <div className="flex items-center gap-3 pb-4 border-b border-white/5">
-        <div className="w-8 h-8 rounded-lg bg-[#111] border border-[#333] flex items-center justify-center text-sm">
-          ⚡
-        </div>
-        <div>
-          <div className="text-sm font-bold text-white">Transaction Parameters</div>
-          <div className="text-[11px] text-[#555]">Configure the transfer for policy evaluation</div>
-        </div>
+      <div className="pb-3 border-b border-neutral-200">
+        <div className="text-sm font-semibold">Transfer</div>
+        <div className="text-xs text-neutral-500 mt-0.5">Parameters for the policy check</div>
         {loading && (
-          <div className="ml-auto flex items-center gap-1.5 text-[10px] font-mono text-amber-400">
-            <svg className="animate-spin h-3 w-3" viewBox="0 0 24 24" fill="none">
-              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
-            </svg>
-            evaluating…
-          </div>
+          <div className="text-xs text-neutral-500 mt-2">Evaluating…</div>
         )}
       </div>
 
@@ -219,20 +201,15 @@ export default function ComplianceForm({ onResult, onLoadingChange }) {
 
         {/* ── Origin Jurisdiction ── */}
         <div className="space-y-2">
-          <label htmlFor="origin" className="block text-[10px] font-bold tracking-widest uppercase text-[#666]">
-            Origin Jurisdiction
+          <label htmlFor="origin" className="field-label">
+            Origin jurisdiction
           </label>
           <select
             id="origin"
             value={origin}
             onChange={e => setOrigin(e.target.value)}
             disabled={loading}
-            className="
-              styled-select w-full bg-[#111] border border-[#222] rounded-xl
-              px-4 py-3.5 appearance-none text-white font-mono font-semibold text-sm
-              outline-none cursor-pointer transition-all duration-200
-              focus:border-[#888] disabled:opacity-50
-            "
+            className="field"
           >
             <option value="EU">European Union</option>
             <option value="SG">Singapore</option>
@@ -246,20 +223,13 @@ export default function ComplianceForm({ onResult, onLoadingChange }) {
 
         {/* ── Destination Jurisdiction ── */}
         <div className="space-y-2">
-          <label htmlFor="destination" className="block text-[10px] font-bold tracking-widest uppercase text-[#666]">
-            Destination Jurisdiction
-          </label>
+          <label htmlFor="destination" className="field-label">Destination jurisdiction</label>
           <select
             id="destination"
             value={destination}
             onChange={e => setDestination(e.target.value)}
             disabled={loading}
-            className="
-              styled-select w-full bg-[#111] border border-[#222] rounded-xl
-              px-4 py-3.5 appearance-none text-white font-mono font-semibold text-sm
-              outline-none cursor-pointer transition-all duration-200
-              focus:border-[#888] disabled:opacity-50
-            "
+            className="field"
           >
             <option value="EU">European Union</option>
             <option value="US">United States</option>
@@ -272,20 +242,13 @@ export default function ComplianceForm({ onResult, onLoadingChange }) {
 
         {/* ── Institution Type ── */}
         <div className="space-y-2">
-          <label htmlFor="institution" className="block text-[10px] font-bold tracking-widest uppercase text-[#666]">
-            Institution Type
-          </label>
+          <label htmlFor="institution" className="field-label">Institution type</label>
           <select
             id="institution"
             value={institution}
             onChange={e => setInstitution(e.target.value)}
             disabled={loading}
-            className="
-              styled-select w-full bg-[#111] border border-[#222] rounded-xl
-              px-4 py-3.5 appearance-none text-white font-mono font-semibold text-sm
-              outline-none cursor-pointer transition-all duration-200
-              focus:border-[#888] disabled:opacity-50
-            "
+            className="field"
           >
                   <option value="MPI">MPI (Major Payment Institution - MAS)</option>
                   <option value="CASP">CASP (Crypto-Asset Service Provider - MiCA)</option>
@@ -299,20 +262,13 @@ export default function ComplianceForm({ onResult, onLoadingChange }) {
 
         {/* ── Activity ── */}
         <div className="space-y-2">
-          <label htmlFor="activity" className="block text-[10px] font-bold tracking-widest uppercase text-[#666]">
-            Activity
-          </label>
+          <label htmlFor="activity" className="field-label">Activity</label>
           <select
             id="activity"
             value={activity}
             onChange={e => setActivity(e.target.value)}
             disabled={loading}
-            className="
-              styled-select w-full bg-[#111] border border-[#222] rounded-xl
-              px-4 py-3.5 appearance-none text-white font-mono font-semibold text-sm
-              outline-none cursor-pointer transition-all duration-200
-              focus:border-[#888] disabled:opacity-50
-            "
+            className="field"
           >
             <option value="transfer">Cross-border Transfer</option>
             <option value="exchange">Exchange / Swap</option>
@@ -323,10 +279,8 @@ export default function ComplianceForm({ onResult, onLoadingChange }) {
 
         {/* ── Network Selector ── */}
         <div className="space-y-2">
-          <label className="block text-[10px] font-bold tracking-widest uppercase text-[#666]">
-            Blockchain Network
-          </label>
-          <div className="grid grid-cols-4 gap-1.5">
+          <label className="field-label">Network</label>
+          <div className="flex flex-wrap gap-1.5">
             {Object.keys(DEFAULTS).map(net => (
               <button
                 key={net}
@@ -337,28 +291,18 @@ export default function ComplianceForm({ onResult, onLoadingChange }) {
                   setSenderAddress(DEFAULTS[net].sender)
                   setReceiverAddress(DEFAULTS[net].receiver)
                 }}
-                className="py-2.5 px-2 rounded-xl font-bold text-[11px] tracking-wide border transition-all duration-200 disabled:opacity-50 text-center"
-                style={{
-                  background:   network === net ? 'rgba(99,102,241,0.15)' : 'rgba(255,255,255,0.03)',
-                  borderColor:  network === net ? 'rgba(99,102,241,0.5)'  : 'rgba(255,255,255,0.08)',
-                  color:        network === net ? '#a5b4fc'               : '#475569',
-                  boxShadow:    network === net ? '0 0 16px rgba(99,102,241,0.2)' : 'none',
-                }}
+                className={`btn text-xs ${network === net ? 'btn-active' : ''}`}
               >
                 {DEFAULTS[net].label}
               </button>
             ))}
           </div>
-          <div className="text-[10px] font-mono text-[#444] px-1">
-            {DEFAULTS[network]?.sublabel || ''}
-          </div>
+          <div className="text-xs text-neutral-500">{DEFAULTS[network]?.sublabel || ''}</div>
         </div>
 
         {/* ── Asset Type ── */}
         <div className="space-y-2">
-          <label htmlFor="asset" className="block text-[10px] font-bold tracking-widest uppercase text-[#666]">
-            Asset
-          </label>
+          <label htmlFor="asset" className="field-label">Asset</label>
           <div className="flex gap-2">
             {['USDC', 'USDT'].map(a => (
               <button
@@ -366,13 +310,7 @@ export default function ComplianceForm({ onResult, onLoadingChange }) {
                 type="button"
                 disabled={loading}
                 onClick={() => setAsset(a)}
-                className="flex-1 py-3 rounded-xl font-bold text-sm tracking-wide border transition-all duration-200 disabled:opacity-50"
-                style={{
-                  background:   asset === a ? 'rgba(16,185,129,0.12)' : 'rgba(255,255,255,0.03)',
-                  borderColor:  asset === a ? 'rgba(16,185,129,0.4)'  : 'rgba(255,255,255,0.08)',
-                  color:        asset === a ? '#34d399'               : '#475569',
-                  boxShadow:    asset === a ? '0 0 16px rgba(16,185,129,0.15)' : 'none',
-                }}
+                className={`btn flex-1 ${asset === a ? 'btn-active' : ''}`}
               >
                 {a}
               </button>
@@ -382,86 +320,54 @@ export default function ComplianceForm({ onResult, onLoadingChange }) {
 
         {/* ── Wallet Type ── */}
         <div className="space-y-2">
-          <label htmlFor="walletType" className="block text-[10px] font-bold tracking-widest uppercase text-[#666]">
-            Wallet Type{' '}
-            <span className="text-[#444] normal-case tracking-normal font-normal">/ Custodial classification</span>
-          </label>
+          <label htmlFor="walletType" className="field-label">Wallet type</label>
           <select
             id="walletType"
             value={walletType}
             onChange={e => setWalletType(e.target.value)}
             disabled={loading}
-            className="
-              styled-select w-full bg-[#111] border border-[#222] rounded-xl
-              px-4 py-3.5 appearance-none text-white font-mono font-semibold text-sm
-              outline-none cursor-pointer transition-all duration-200
-              focus:border-[#888] disabled:opacity-50
-            "
+            className="field"
           >
-            <option value="Hosted">Hosted — Custodial (Exchange / VASP)</option>
-            <option value="Unhosted">Unhosted — Self-Custodial (Private Wallet)</option>
+            <option value="Hosted">Hosted (custodial)</option>
+            <option value="Unhosted">Unhosted (self-custodial)</option>
           </select>
           {walletType === 'Unhosted' && (
-            <div
-              className="flex items-center gap-2 px-3 py-2 rounded-lg text-[10px] font-mono"
-              style={{ background: 'rgba(251,191,36,0.06)', border: '1px solid rgba(251,191,36,0.18)', color: '#fbbf24' }}
-            >
-              <span>⚠</span>
-              <span>EU MiCA / TFR rules apply — cryptographic proof required above €1,000</span>
+            <div className="text-xs text-neutral-600">
+              MiCA/TFR: cryptographic proof required above 1,000 for unhosted wallets.
             </div>
           )}
         </div>
 
         {/* ── Sender Address ── */}
         <div className="space-y-2">
-          <label htmlFor="senderAddress" className="block text-[10px] font-bold tracking-widest uppercase text-[#666]">
-            Sender Address
-          </label>
+          <label htmlFor="senderAddress" className="field-label">Sender address</label>
           <input
             id="senderAddress"
             type="text"
             value={senderAddress}
             onChange={e => setSenderAddress(e.target.value)}
             disabled={loading}
-            className="
-              w-full bg-[#111] border border-[#222] rounded-xl
-              px-4 py-3 text-white font-mono text-xs
-              outline-none transition-all duration-200
-              focus:border-[#888] focus:bg-[#6366f1]/5
-              disabled:opacity-50
-            "
+            className="field font-mono text-xs"
           />
         </div>
 
         {/* ── Receiver Address ── */}
         <div className="space-y-2">
-          <label htmlFor="receiverAddress" className="block text-[10px] font-bold tracking-widest uppercase text-[#666]">
-            Receiver Address
-          </label>
+          <label htmlFor="receiverAddress" className="field-label">Receiver address</label>
           <input
             id="receiverAddress"
             type="text"
             value={receiverAddress}
             onChange={e => setReceiverAddress(e.target.value)}
             disabled={loading}
-            className="
-              w-full bg-[#111] border border-[#222] rounded-xl
-              px-4 py-3 text-white font-mono text-xs
-              outline-none transition-all duration-200
-              focus:border-[#888] focus:bg-[#6366f1]/5
-              disabled:opacity-50
-            "
+            className="field font-mono text-xs"
           />
         </div>
 
         {/* ── Amount ── */}
         <div className="space-y-2">
-          <label htmlFor="amount" className="block text-[10px] font-bold tracking-widest uppercase text-[#666]">
-            Transfer Amount{' '}
-            <span className="text-[#444] normal-case tracking-normal font-normal">/ Fiat equivalent</span>
-          </label>
-          <div className="relative">
-            <input
+          <label htmlFor="amount" className="field-label">Amount (USD)</label>
+          <input
               id="amount"
               type="number"
               step="0.01"
@@ -471,28 +377,13 @@ export default function ComplianceForm({ onResult, onLoadingChange }) {
               placeholder="0.00"
               required
               disabled={loading}
-              className="
-                w-full bg-[#111] border border-[#222] rounded-xl
-                px-4 py-3.5 pr-16 text-white font-mono text-lg font-semibold
-                placeholder-[#444] outline-none transition-all duration-200
-                focus:border-[#888] focus:bg-[#6366f1]/5
-                disabled:opacity-50
-              "
-              style={{ boxShadow: 'none' }}
-              onFocus={e => e.target.style.boxShadow = '0 0 0 3px rgba(99,102,241,0.15)'}
-              onBlur={e => e.target.style.boxShadow = 'none'}
+              className="field"
             />
-            <span className="absolute right-4 top-1/2 -translate-y-1/2 text-[11px] font-mono font-bold text-[#555] tracking-widest">
-              USD
-            </span>
-          </div>
         </div>
 
         {/* ── Available Compliance Evidence ── */}
         <div className="space-y-2.5">
-          <div className="text-[10px] font-bold tracking-widest uppercase text-[#666]">
-            Available Compliance Evidence
-          </div>
+          <div className="field-label">Evidence (self-attested)</div>
           <ToggleRow
             id="kyc"
             label="Sender KYC Verified"
@@ -521,52 +412,16 @@ export default function ComplianceForm({ onResult, onLoadingChange }) {
 
         {/* ── Error ── */}
         {error && (
-          <div className="flex items-start gap-3 p-3 rounded-xl bg-red-500/8 border border-red-500/20 text-red-400 text-xs font-mono slide-up">
-            <span className="mt-0.5 flex-shrink-0">⚠</span>
-            <span className="break-words">{error}</span>
-          </div>
+          <div className="text-sm text-red-800">{error}</div>
         )}
 
-        {/* ── Submit button ── */}
         <button
           type="submit"
           id="run-compliance-btn"
           disabled={loading || !amount || parseFloat(amount) <= 0}
-          className="
-            relative w-full py-4 rounded-xl font-black text-sm
-            tracking-[0.15em] uppercase overflow-hidden
-            transition-all duration-200
-            disabled:opacity-50 disabled:cursor-not-allowed
-          "
-          style={{
-            background: loading ? '#222' : '#fff',
-            color: loading ? '#666' : '#000',
-            boxShadow: (!loading && amount) ? '0 4px 24px rgba(255,255,255,0.1)' : 'none',
-            transition: 'all 0.3s ease',
-          }}
-          onMouseEnter={e => { if (!loading && amount) e.currentTarget.style.transform = 'translateY(-2px)' }}
-          onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)' }}
+          className="btn-primary"
         >
-          <span className="relative z-10 flex items-center justify-center gap-3">
-            {loading ? (
-              <>
-                {/* Multi-ring spinner */}
-                <span className="relative flex h-5 w-5">
-                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-30" />
-                  <svg className="animate-spin relative h-5 w-5 text-amber-300" viewBox="0 0 24 24" fill="none">
-                    <circle className="opacity-20" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" />
-                    <path className="opacity-80" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
-                  </svg>
-                </span>
-                <span className="tracking-[0.2em] text-amber-200">EVALUATING POLICY…</span>
-              </>
-            ) : (
-              <>
-                <span className="text-base">⚖</span>
-                EVALUATE POLICY
-              </>
-            )}
-          </span>
+          {loading ? 'Running check…' : 'Run check'}
         </button>
       </form>
     </div>
@@ -576,52 +431,18 @@ export default function ComplianceForm({ onResult, onLoadingChange }) {
 /* ── ToggleRow ─────────────────────────────────────────────── */
 function ToggleRow({ id, label, sublabel, checked, onChange, disabled }) {
   return (
-    <label
-      htmlFor={id}
-      className={`flex items-center gap-4 p-4 rounded-xl border select-none transition-all duration-200 ${disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
-      style={{
-        borderColor: checked ? 'rgba(99,102,241,0.35)' : 'rgba(255,255,255,0.06)',
-        backgroundColor: checked ? 'rgba(99,102,241,0.07)' : 'rgba(255,255,255,0.02)',
-      }}
-    >
-      {/* Hidden checkbox for accessibility */}
+    <label htmlFor={id} className={`flex items-start gap-3 py-2 ${disabled ? 'opacity-50' : ''}`}>
       <input
         type="checkbox"
         id={id}
-        className="sr-only"
+        className="mt-0.5"
         checked={checked}
         onChange={onChange}
         disabled={disabled}
       />
-
-      {/* Toggle pill */}
-      <div
-        className="relative flex-shrink-0 w-11 h-6 rounded-full transition-all duration-200"
-        style={{
-          background: checked
-            ? 'linear-gradient(135deg,#4f46e5,#6366f1)'
-            : 'rgba(255,255,255,0.08)',
-          boxShadow: checked ? '0 0 12px rgba(99,102,241,0.45)' : 'none',
-          border: checked ? '1px solid rgba(99,102,241,0.4)' : '1px solid rgba(255,255,255,0.1)',
-        }}
-      >
-        <span
-          className="absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-white transition-all duration-200 shadow-sm"
-          style={{ transform: checked ? 'translateX(20px)' : 'translateX(0)' }}
-        />
-      </div>
-
-      <div className="flex-1">
-        <div className={`text-sm font-semibold transition-colors ${checked ? 'text-white' : 'text-[#888]'}`}>
-          {label}
-        </div>
-        <div className="text-[11px] text-[#555] mt-0.5">{sublabel}</div>
-      </div>
-      <div
-        className="text-xs font-mono font-bold px-2 py-0.5 rounded transition-all"
-        style={{ color: checked ? '#818cf8' : '#374151', background: checked ? 'rgba(99,102,241,0.15)' : 'transparent' }}
-      >
-        {checked ? 'TRUE' : 'FALSE'}
+      <div>
+        <div className="text-sm text-neutral-800">{label}</div>
+        <div className="text-xs text-neutral-500">{sublabel}</div>
       </div>
     </label>
   )

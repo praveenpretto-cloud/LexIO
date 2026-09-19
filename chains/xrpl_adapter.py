@@ -1,9 +1,7 @@
 """
 chains/xrpl_adapter.py — XRPL Testnet adapter for LexIO.
 
-Wraps the existing xrpl_client.py and xrpl_escrow.py logic into the
-ChainAdapter interface. XRPL is the primary chain for LexIO — it supports
-full payments, memo anchoring, and native escrow.
+XRPL testnet adapter: payments, memo anchoring, native escrow.
 """
 from __future__ import annotations
 

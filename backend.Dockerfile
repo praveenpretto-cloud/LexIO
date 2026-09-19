@@ -21,7 +21,7 @@ RUN npm ci
 
 # Copy source code
 COPY compliance_engine.py credentials.py database.py db_models.py ai_agent.py ./
-COPY main.py models.py stellar_client.py web3_client.py xrpl_client.py xrpl_escrow.py ./
+COPY main.py models.py stellar_client.py xrpl_escrow.py ./
 COPY chains/ ./chains/
 COPY static/ ./static/
 COPY circuits/ ./circuits/

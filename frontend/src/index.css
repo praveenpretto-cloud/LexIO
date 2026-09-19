@@ -1,153 +1,98 @@
 @import "tailwindcss";
 
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600;700&display=swap');
-
 @theme {
-  --font-sans: 'Inter', sans-serif;
-  --font-mono: 'JetBrains Mono', monospace;
-
-  --color-surface-950: #050505;
-  --color-surface-900: #0a0a0a;
-  --color-surface-800: #111111;
-  --color-surface-700: #1a1a1a;
-  --color-surface-600: #222222;
-
-  --color-brand-400: #fff;
-  --color-brand-500: #fff;
-  --color-brand-600: #fff;
-
-  --color-approve-400: #00FF00;
-  --color-approve-500: #00FF00;
-  --color-approve-600: #00CC00;
-
-  --color-reject-400:  #FF0000;
-  --color-reject-500:  #FF0000;
-  --color-reject-600:  #CC0000;
+  --font-sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
 }
 
-/* ── Base ─────────────────────────────────────────────── */
 *, *::before, *::after { box-sizing: border-box; }
 
 body {
   margin: 0;
   font-family: var(--font-sans);
-  background-color: var(--color-surface-950);
-  color: #f1f5f9;
+  background: #f4f4f5;
+  color: #171717;
   -webkit-font-smoothing: antialiased;
   min-height: 100vh;
 }
 
 #root { min-height: 100vh; }
 
-/* ── Grid background ──────────────────────────────────── */
-.bg-grid {
-  position: fixed;
-  inset: 0;
-  background-image:
-    linear-gradient(rgba(255,255,255,0.02) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(255,255,255,0.02) 1px, transparent 1px);
-  background-size: 60px 60px;
-  pointer-events: none;
-  z-index: 0;
-}
+a { color: #171717; }
 
-/* Removed glow mesh */
-
-/* ── Premium Glass Panels ─────────────────────────────── */
-.glass-panel {
-  background: #000000;
-  border: 1px solid rgba(255, 255, 255, 0.05);
-  box-shadow: 0 4px 12px 0 rgba(0, 0, 0, 0.5);
-}
-
-.glass-panel-glow {
-  background: #050505;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  box-shadow: 0 8px 24px 0 rgba(0, 0, 0, 0.6);
-}
-
-/* Removed scanlines */
-
-/* ── Custom checkbox ──────────────────────────────────── */
-.custom-check {
-  appearance: none;
-  width: 20px;
-  height: 20px;
-  border: 2px solid rgba(255,255,255,0.2);
-  border-radius: 5px;
-  background: rgba(255,255,255,0.05);
-  cursor: pointer;
-  position: relative;
-  flex-shrink: 0;
-  transition: all 0.15s ease;
-}
-.custom-check:checked {
+.panel {
   background: #fff;
-  border-color: #fff;
-  box-shadow: 0 0 12px rgba(255,255,255,0.5);
+  border: 1px solid #e5e5e5;
+  padding: 20px;
 }
-.custom-check:checked::after {
-  content: '✓';
-  position: absolute;
-  color: white;
+
+.field-label {
+  display: block;
   font-size: 12px;
-  font-weight: 700;
-  top: 50%; left: 50%;
-  transform: translate(-50%,-50%);
-}
-.custom-check:hover { border-color: #6366f1; }
-
-/* ── Select chevron ───────────────────────────────────── */
-.styled-select {
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3E%3Cpath stroke='%236366f1' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3E%3C/svg%3E");
-  background-repeat: no-repeat;
-  background-position: right 14px center;
-  background-size: 20px;
+  font-weight: 500;
+  color: #525252;
+  margin-bottom: 6px;
 }
 
-/* ── Flash animations ─────────────────────────────────── */
-@keyframes flashRed {
-  0%   { background-color: rgba(244,63,94,0.22); box-shadow: 0 0 90px rgba(244,63,94,0.55), inset 0 0 40px rgba(244,63,94,0.08); }
-  100% { background-color: transparent; box-shadow: none; }
-}
-@keyframes flashGreen {
-  0%   { background-color: rgba(16,185,129,0.22); box-shadow: 0 0 90px rgba(16,185,129,0.55), inset 0 0 40px rgba(16,185,129,0.08); }
-  100% { background-color: transparent; box-shadow: none; }
-}
-@keyframes glowRed {
-  0%,100% { box-shadow: 0 0 20px rgba(244,63,94,0.3),  0 0 60px rgba(244,63,94,0.1); }
-  50%     { box-shadow: 0 0 50px rgba(244,63,94,0.65), 0 0 100px rgba(244,63,94,0.2); }
-}
-@keyframes glowGreen {
-  0%,100% { box-shadow: 0 0 20px rgba(16,185,129,0.3),  0 0 60px rgba(16,185,129,0.1); }
-  50%     { box-shadow: 0 0 50px rgba(16,185,129,0.65), 0 0 100px rgba(16,185,129,0.2); }
-}
-@keyframes slideUp {
-  from { opacity: 0; transform: translateY(16px); }
-  to   { opacity: 1; transform: translateY(0); }
-}
-@keyframes shimmer {
-  from { transform: translateX(-100%); }
-  to   { transform: translateX(100%); }
+.field {
+  width: 100%;
+  border: 1px solid #d4d4d4;
+  background: #fff;
+  color: #171717;
+  padding: 8px 10px;
+  font-size: 13px;
+  border-radius: 4px;
+  outline: none;
 }
 
-.flash-red   { animation: flashRed   0.7s ease-out forwards; }
-.flash-green { animation: flashGreen 0.7s ease-out forwards; }
-.glow-red    { animation: glowRed    2s ease-in-out infinite; }
-.glow-green  { animation: glowGreen  2s ease-in-out infinite; }
-.slide-up    { animation: slideUp    0.35s cubic-bezier(0.4,0,0.2,1) forwards; }
-
-.btn-shimmer::after {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.12), transparent);
-  transform: translateX(-100%);
-  transition: transform 0.6s ease;
+.field:focus {
+  border-color: #171717;
 }
-.btn-shimmer:hover::after { transform: translateX(100%); }
 
-/* ── Scrollbar ────────────────────────────────────────── */
-::-webkit-scrollbar { width: 5px; }
-::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: rgba(99,102,241,0.3); border-radius: 3px; }
+.field:disabled {
+  opacity: 0.5;
+}
+
+.btn {
+  border: 1px solid #d4d4d4;
+  background: #fff;
+  color: #171717;
+  padding: 8px 12px;
+  font-size: 13px;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.btn:hover:not(:disabled) {
+  background: #f4f4f5;
+}
+
+.btn-primary {
+  width: 100%;
+  border: 1px solid #171717;
+  background: #171717;
+  color: #fff;
+  padding: 10px 14px;
+  font-size: 13px;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.btn-primary:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.btn-active {
+  border-color: #171717;
+  background: #171717;
+  color: #fff;
+}
+
+.status-approve { color: #166534; }
+.status-reject { color: #991b1b; }
+.status-watch { color: #854d0e; }
+
+::-webkit-scrollbar { width: 8px; }
+::-webkit-scrollbar-track { background: #f4f4f5; }
+::-webkit-scrollbar-thumb { background: #d4d4d4; }

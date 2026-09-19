@@ -62,10 +62,10 @@ async def test_clean_wallets_approve():
 # ---------------------------------------------------------------------------
 
 async def test_pep_wallet_rejects():
-    """Wallet owned by a PEP (vladimir_putin mock) must be REJECT."""
+    """Wallet tagged pep_001 in the fixture list must be REJECT."""
     request = AgentTransferRequest(
         source_wallet_address="rN7n7otQDd6FczFgLdQqhkFGzPb7E4k7Ud",   # alice_clean
-        destination_wallet_address="rU6K7V8oST9vMN2pQr4sT5uV6wX7yZ8aA",  # vladimir_putin
+        destination_wallet_address="rU6K7V8oST9vMN2pQr4sT5uV6wX7yZ8aA",  # pep_001
     )
     decision = await check_agentic_finance_compliance(request)
 
@@ -154,15 +154,15 @@ async def test_credential_issuance():
 
 async def test_linked_wallet_inheritance():
     """
-    rPqq3gQJ5M7nOpKlM9pQr2sT3uV4wXyZa is owned by evgeny_prigozhin (PEP).
-    rU6K7V8oST9vMN2pQr4sT5uV6wX7yZ8aA (putin) links to it.
+    rPqq3gQJ5M7nOpKlM9pQr2sT3uV4wXyZa is owned by pep_002.
+    rU6K7V8oST9vMN2pQr4sT5uV6wX7yZ8aA (pep_001) links to it.
     But this test checks the direct PEP on rPqq3... as the destination.
     Indirect path: a wallet linked to rU6... (PEP wallet) should inherit risk.
     """
     # rPqq... is directly owned by a PEP (Prigozhin) — direct REJECT
     request = AgentTransferRequest(
         source_wallet_address="rN7n7otQDd6FczFgLdQqhkFGzPb7E4k7Ud",     # alice_clean
-        destination_wallet_address="rPqq3gQJ5M7nOpKlM9pQr2sT3uV4wXyZa",  # prigozhin — PEP
+        destination_wallet_address="rPqq3gQJ5M7nOpKlM9pQr2sT3uV4wXyZa",  # pep_002
     )
     decision = await check_agentic_finance_compliance(request)
 
@@ -178,7 +178,7 @@ async def test_linked_wallet_inheritance():
     # but is linked to the PEP wallet. Use a custom wallet_db for this sub-case.
     linked_only_db = {
         "rCleanWalletLinkedToPEP": {"owner_name": "clean_but_linked", "jurisdiction": "US"},
-        "rU6K7V8oST9vMN2pQr4sT5uV6wX7yZ8aA": {"owner_name": "vladimir_putin", "jurisdiction": "RU"},
+        "rU6K7V8oST9vMN2pQr4sT5uV6wX7yZ8aA": {"owner_name": "pep_001", "jurisdiction": "RU"},
         **MOCK_WALLET_OWNERSHIP,
     }
     from compliance_engine import LINKED_WALLETS
@@ -211,9 +211,9 @@ async def test_linked_wallet_inheritance():
 # ---------------------------------------------------------------------------
 
 async def test_sanctions_hit_rejects():
-    """Wallet owned by a sanctioned entity (north_korea_bank) must be REJECT."""
+    """Wallet tagged sdn_001 must be REJECT."""
     request = AgentTransferRequest(
-        source_wallet_address="rSanctionWalletNorthKoreaXxXxXxXx",      # north_korea_bank
+        source_wallet_address="rSanctionWalletNorthKoreaXxXxXxXx",      # sdn_001
         destination_wallet_address="rN7n7otQDd6FczFgLdQqhkFGzPb7E4k7Ud", # alice_clean
     )
     decision = await check_agentic_finance_compliance(request)

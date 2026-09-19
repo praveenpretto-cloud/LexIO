@@ -1,17 +1,4 @@
-"""
-ai_agent.py — Google Gemini-powered compliance reasoning agent for LexIO.
-
-When the rule-based engine flags a transaction as WATCH or CDD, this module
-calls a real LLM (Google Gemini) to generate a natural-language compliance
-narrative explaining *why* the transaction is risky and *what* action should
-be taken. This makes the "Agentic" part of LexIO genuinely agentic.
-
-The AI agent reasons about:
-  - Jurisdiction risk (FATF classifications)
-  - Transaction amount relative to regulatory thresholds (MAS/MiCA/GENIUS)
-  - Wallet type (hosted vs. unhosted)
-  - FATF risk tier (SCDD / CDD / EDD)
-"""
+"""Optional Gemini narrative for a decision the rule engine already made."""
 from __future__ import annotations
 
 import os
@@ -28,17 +15,9 @@ except ImportError:
 
 GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY", "")
 
-_SYSTEM_PROMPT = """You are a senior compliance officer at a global digital asset institution with 20 years of experience.
-You have deep expertise in FATF AML/CFT standards, MiCA (EU Markets in Crypto-Assets), MAS PSN02 (Singapore), and the US GENIUS Act for stablecoins.
-
-When given details about a proposed agent-to-agent blockchain payment, you must:
-1. Identify the specific regulatory risk factors
-2. Reference the exact compliance framework that applies (FATF, MiCA, MAS, GENIUS, OFAC)
-3. Explain what due diligence action is required (SCDD / CDD / EDD)
-4. Be concise — 3-4 sentences maximum. This is a real-time compliance alert.
-5. Write in a professional, institutional tone.
-
-Do NOT use bullet points. Write in plain prose. Do NOT mention that you are an AI."""
+_SYSTEM_PROMPT = """Explain a crypto-transfer compliance decision in 3-4 sentences.
+Name the applicable framework (FATF, MiCA, MAS PSN02, GENIUS Act) if it is in the flags.
+Do not claim you queried live sanctions data. Do not say you are an AI. No bullet points."""
 
 
 def _build_prompt(
